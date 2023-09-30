@@ -8,31 +8,56 @@ public class Game : MonoBehaviour
 
     public Level[] levels;
 
+    public TMPro.TextMeshProUGUI userMessageText;
+    public AnimationCurve userMessageAnimationCurve;
+
     public int currentLevel;
 
     void Start()
     {
-        StartCoroutine(GoGame());
+        StartCoroutine(StartGame());
     }
 
-    IEnumerator MoveCameraTo(Vector3 position, float time = 1.0f)
+    public IEnumerator ShowMessageToUser(string message, float time = 1.0f)
     {
-        var startPosition = camera.transform.position;
+        userMessageText.enabled = true;
+        userMessageText.text = message;
+        yield return StartCoroutine(ScaleAnimation(userMessageText.transform, userMessageAnimationCurve));
+        userMessageText.enabled = false;
+    }
+
+    IEnumerator MovePositionOverTime(Transform transform, Vector3 position, float time = 1.0f)
+    {
+        var startPosition = transform.position;
         var startTime = Time.time;
         while (Time.time - startTime < time)
         {
-            camera.transform.position = Vector3.Lerp(startPosition, position, (Time.time - startTime) / time);
+            transform.position = Vector3.Lerp(startPosition, position, (Time.time - startTime) / time);
             yield return null;
         }
     }
 
-    IEnumerator GoGame()
+    IEnumerator ScaleAnimation(Transform transform, AnimationCurve animationCurve)
     {
+        var startTime = Time.time;
+        while (Time.time - startTime < animationCurve.keys[animationCurve.length - 1].time)
+        {
+            transform.localScale = Vector3.one * animationCurve.Evaluate(Time.time - startTime);
+            yield return null;
+        }
+    }
+
+    IEnumerator StartGame()
+    {
+        yield return StartCoroutine(ShowMessageToUser("Beat my game, gamer."));
         while (true)
         {
-            yield return StartCoroutine(MoveCameraTo(levels[currentLevel].transform.position));
+            yield return StartCoroutine(MovePositionOverTime(camera.transform, levels[currentLevel].transform.position));
+            var level = levels[currentLevel];
+            yield return StartCoroutine(ShowMessageToUser($"Level {currentLevel + 1} - {level.LevelName}"));
+            yield return StartCoroutine(level.StartLevel());
+            yield return StartCoroutine(ShowMessageToUser($"Done Deal!"));
             currentLevel = (currentLevel + 1) % levels.Length;
-            yield return new WaitForSeconds(1.0f);
         }
     }
 }
