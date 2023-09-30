@@ -4,21 +4,35 @@ using UnityEngine;
 
 public class Game : MonoBehaviour
 {
-    // Game idea
-    // Parallel parking timing sim
-    // Hacker art style
+    public Camera camera;
 
-    public GameObject carPrefab;
-    public GameObject obstaclePrefab;
-    public float fitTolerance = 0.25f;
+    public Level[] levels;
+
+    public int currentLevel;
 
     void Start()
     {
-
+        StartCoroutine(GoGame());
     }
 
-    void Update()
+    IEnumerator MoveCameraTo(Vector3 position, float time = 1.0f)
     {
+        var startPosition = camera.transform.position;
+        var startTime = Time.time;
+        while (Time.time - startTime < time)
+        {
+            camera.transform.position = Vector3.Lerp(startPosition, position, (Time.time - startTime) / time);
+            yield return null;
+        }
+    }
 
+    IEnumerator GoGame()
+    {
+        while (true)
+        {
+            yield return StartCoroutine(MoveCameraTo(levels[currentLevel].transform.position));
+            currentLevel = (currentLevel + 1) % levels.Length;
+            yield return new WaitForSeconds(1.0f);
+        }
     }
 }

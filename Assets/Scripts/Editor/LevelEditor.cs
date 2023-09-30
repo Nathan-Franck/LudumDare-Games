@@ -17,20 +17,20 @@ public class LevelEditor : Editor
 
         for (int i = 0; i < level.carPath.Length; i++)
         {
-            Vector3 newPos = Handles.PositionHandle(level.carPath[i], Quaternion.identity);
+            Vector3 newPos = Handles.PositionHandle(level.transform.TransformPoint(level.carPath[i]), Quaternion.identity);
             
             if (level.carPath[i] != newPos)
             {
                 // Ensure the changes are registered as undoable actions
                 Undo.RecordObject(level, "Move Car Path Point");
-                level.carPath[i] = newPos;
+                level.carPath[i] = level.transform.InverseTransformPoint(newPos);
             }
         }
 
         // Render the path
         for (int i = 0; i < level.carPath.Length; i++)
         {
-            Handles.DrawLine(level.carPath[i], level.carPath[(i + 1)%level.carPath.Length]);
+            Handles.DrawLine(level.transform.TransformPoint(level.carPath[i]), level.transform.TransformPoint(level.carPath[(i + 1)%level.carPath.Length]));
         }
 
         // For each empty space, check to see which path is closest and draw a point on that path
@@ -41,7 +41,7 @@ public class LevelEditor : Editor
 
             for (int j = 0; j < level.carPath.Length; j++)
             {
-                Vector3 point = Level.ClosestPointOnLineSegment(level.carPath[j], level.carPath[(j + 1)%level.carPath.Length], level.emptySpaces[i].position);
+                Vector3 point = Level.ClosestPointOnLineSegment(level.transform.TransformPoint(level.carPath[j]), level.transform.TransformPoint(level.carPath[(j + 1)%level.carPath.Length]), level.emptySpaces[i].position);
 
                 float distance = Vector3.Distance(level.emptySpaces[i].position, point);
 
