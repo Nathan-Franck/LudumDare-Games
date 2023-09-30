@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,12 +11,28 @@ public class Game : MonoBehaviour
 
     public TMPro.TextMeshProUGUI userMessageText;
     public AnimationCurve userMessageAnimationCurve;
+    public enum DebugBehaviour{
+        PlayFromBeginning,
+        SkipToLevel,
+    };
+    public DebugBehaviour debugBehaviour;
+    public int debugLevel = 0;
+
 
     public int currentLevel;
 
     void Start()
     {
-        StartCoroutine(StartGame());
+        if (debugBehaviour == DebugBehaviour.PlayFromBeginning)
+        {
+            StartCoroutine(StartGame());
+        }
+        else if (debugBehaviour == DebugBehaviour.SkipToLevel)
+        {
+            var level = levels[debugLevel];
+            camera.transform.position = level.transform.position;
+            StartCoroutine(level.StartLevel());
+        }
     }
 
     public IEnumerator ShowMessageToUser(string message, float time = 1.0f)
