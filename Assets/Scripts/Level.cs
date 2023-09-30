@@ -200,7 +200,6 @@ public class Level : MonoBehaviour
     }
 
     public record ClosestSegmentPointResult(Vector3 Point, float Progress);
-
     public ClosestSegmentPointResult ClosestPointOnLineSegment(Vector3 start, Vector3 end, Vector3 point)
     {
         Vector3 line = end - start;
