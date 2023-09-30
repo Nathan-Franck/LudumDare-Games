@@ -2828,12 +2828,12 @@ MonoBehaviour:
     designatedParkTime: 1
     carSpeed: 6
   carPath:
-  - {x: 1.751762, y: -1.6427345, z: 0}
+  - {x: 1.8266317, y: -1.6146585, z: 0}
   - {x: -1.7277277, y: -1.7153361, z: 0}
   - {x: -1.7344174, y: 1.1154985, z: 0}
   - {x: 0.59420013, y: 1.0911901, z: 0}
-  - {x: 0.5845959, y: 0.35798186, z: 0}
-  - {x: 1.7052809, y: 0.39509368, z: 0}
+  - {x: 0.6126721, y: 0.36734062, z: 0}
+  - {x: 1.864379, y: 0.4138111, z: 0}
   carPrefab: {fileID: 6106706168049891997, guid: b7b1c824599aa7d4d8242812c3dd0e5b, type: 3}
   activeCars: []
   parkedCars: []
@@ -3814,21 +3814,21 @@ MonoBehaviour:
   LevelName: Into the Grid
   emptySpaces:
   - space: {fileID: 822731673}
-    designatedParkTime: 1
-    carSpeed: 4
+    designatedParkTime: 0
+    carSpeed: 1
   - space: {fileID: 623376333}
-    designatedParkTime: 1
+    designatedParkTime: 0
     carSpeed: 6
   - space: {fileID: 1060002897}
-    designatedParkTime: 1
+    designatedParkTime: 0
     carSpeed: 4
   - space: {fileID: 1476850135}
-    designatedParkTime: 1
+    designatedParkTime: 0
     carSpeed: 6
   carPath:
-  - {x: 1.751767, y: -1.6427305, z: 0}
-  - {x: -1.7277436, y: -1.7153352, z: 0}
-  - {x: -1.7344025, y: 1.115484, z: 0}
+  - {x: 1.7451166, y: -1.6252475, z: 0}
+  - {x: -1.7447469, y: -1.5917107, z: 0}
+  - {x: -1.6224681, y: 1.0579908, z: 0}
   - {x: 0.594203, y: 1.0911922, z: 0}
   - {x: 0.58459526, y: 0.35798615, z: 0}
   - {x: 1.705283, y: 0.39510036, z: 0}
