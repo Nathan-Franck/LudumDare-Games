@@ -1139,12 +1139,12 @@ MonoBehaviour:
     designatedParkTime: 1
     carSpeed: 6
   carPath:
-  - {x: 1.7518828, y: -1.642738, z: 0}
-  - {x: -1.7278289, y: -1.7153338, z: 0}
-  - {x: -1.7345206, y: 1.1155055, z: 0}
-  - {x: 0.5942371, y: 1.091191, z: 0}
-  - {x: 0.5846324, y: 0.35798094, z: 0}
-  - {x: 1.7053856, y: 0.3950988, z: 0}
+  - {x: 1.7519684, y: -1.6427402, z: 0}
+  - {x: -1.7279241, y: -1.7153312, z: 0}
+  - {x: -1.7346276, y: 1.1155084, z: 0}
+  - {x: 0.5942639, y: 1.0911903, z: 0}
+  - {x: 0.5846592, y: 0.35798016, z: 0}
+  - {x: 1.705466, y: 0.39509654, z: 0}
   carPrefab: {fileID: 6106706168049891997, guid: b7b1c824599aa7d4d8242812c3dd0e5b, type: 3}
   activeCars: []
   parkedCars: []
@@ -4489,7 +4489,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ff81312170138c4aad5d400262ca053, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  traceSettings:
+    zOffset: -10
+    targetPadding: 0.1
+    lineThickness: 0.2
+    lineColor: {r: 1, g: 1, b: 1, a: 1}
+  labelSettings:
+    zOffset: -10
+    Padding: 0.1
+    textColor: {r: 1, g: 1, b: 1, a: 1}
+    textScale: 0.05
+    fontSize: 32
   camera: {fileID: 519420031}
+  carLabelPrefab: {fileID: 6913021492454550563, guid: d6c5617e96f2388499896e10ee8cfcfd, type: 3}
+  carStatusLabelOffset: {x: 1, y: -1, z: 0}
+  LabelList:
+  - mom.png
+  - childhood_kitten.png
+  - passwords.txt
+  - bank_details.txt
+  - social_security_number.txt
+  - tax_return.pdf
+  - nudes.png
+  - budget.txt
+  - diary.txt
+  - gps_data.txt
   levels:
   - {fileID: 1212898869}
   - {fileID: 1592667183}
@@ -4546,7 +4570,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  debugBehaviour: 0
+  debugBehaviour: 1
   debugLevel: 0
   currentLevel: 0
 --- !u!4 &1941533725

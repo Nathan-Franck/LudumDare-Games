@@ -11,7 +11,6 @@ namespace System.Runtime.CompilerServices
 
 public class Level : MonoBehaviour
 {
-
     [System.Serializable]
     public class SpaceSettings
     {
@@ -24,14 +23,16 @@ public class Level : MonoBehaviour
     public Vector3[] carPath;
     public GameObject carPrefab;
     [System.Serializable]
-    public record ActiveCar(Transform Transform, float Progress);
+    public record ActiveCar(Transform Transform, float Progress, string Label);
     public List<ActiveCar> activeCars;
     public List<Transform> parkedCars;
     public float timeToComplete = 30;
     public float fitTolerance = 0.25f;
     public float carSpeedScale = 1.0f;
+    public LabelGfx labelGfx = new LabelGfx();
+    public TracingGfx tracingGfx = new TracingGfx();
 
-    public IEnumerator StartLevel()
+    public IEnumerator StartLevel(Game game)
     {
         // Cleanup previous state
         foreach (var car in activeCars)
@@ -56,11 +57,13 @@ public class Level : MonoBehaviour
             var car = Instantiate(carPrefab, Vector3.zero, Quaternion.identity);
             car.transform.parent = transform;
             car.transform.localPosition = LocationOnPath(initialCarProgress);
-            activeCars.Add(new(car.transform, initialCarProgress));
+            activeCars.Add(new(car.transform, initialCarProgress, game.LabelList.Random()));
         }
         var solved = false;
         while (!solved)
         {
+            labelGfx.Clear();
+            tracingGfx.traces.Clear();
             var totalLength = TotalLength();
             // Update all active cars
             for (int i = 0; i < activeCars.Count; i++)
@@ -71,8 +74,18 @@ public class Level : MonoBehaviour
                 var frontProgress = newProgess + carFront;
                 var backProgress = newProgess + carBack;
                 car.Transform.localRotation = Quaternion.FromToRotation(Vector3.up, LocationOnPath(backProgress) - LocationOnPath(frontProgress));
-                activeCars[i] = new(car.Transform, newProgess);
+                activeCars[i] = car with { Progress = newProgess };
+                // Label le car!
+                var bounds = labelGfx.Add(new (new (game.carLabelPrefab, car.Label), car.Transform.position + game.carStatusLabelOffset));
+
+                // Trace from label to car!
+                tracingGfx.traces.Add(new(car.Transform, bounds ));
             }
+
+            // Update labels and tracing
+            labelGfx.Update(game.labelSettings);
+            tracingGfx.Update(game.traceSettings);
+
             // just wait for any key, then we're solved
             if (Input.anyKeyDown)
             {

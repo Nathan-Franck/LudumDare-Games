@@ -889,7 +889,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="Assembly-CSharp.csproj" />
-    <ProjectReference Include="SlyDemo.csproj" />
     <ProjectReference Include="ToonBoom.TBGRenderer.csproj" />
     <ProjectReference Include="ToonBoom.HarmonySDK.csproj" />
     <ProjectReference Include="ToonBoom.HarmonySDK.Editor.csproj" />

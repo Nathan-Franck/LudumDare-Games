@@ -5,13 +5,30 @@ using UnityEngine;
 
 public class Game : MonoBehaviour
 {
+    public TracingSettings traceSettings = new TracingSettings();
+    public LabelSettings labelSettings = new LabelSettings();
     public Camera camera;
+    public GameObject carLabelPrefab;
+    public Vector3 carStatusLabelOffset = new Vector3(0.5f, 0.5f, 0);
+    public string[] LabelList = new string[] {
+        "mom.png",
+        "childhood_kitten.png",
+        "passwords.txt",
+        "bank_details.txt",
+        "social_security_number.txt",
+        "tax_return.pdf",
+        "nudes.png",
+        "budget.txt",
+        "diary.txt",
+        "gps_data.txt",
+    };
 
     public Level[] levels;
 
     public TMPro.TextMeshProUGUI userMessageText;
     public AnimationCurve userMessageAnimationCurve;
-    public enum DebugBehaviour{
+    public enum DebugBehaviour
+    {
         PlayFromBeginning,
         SkipToLevel,
     };
@@ -31,7 +48,7 @@ public class Game : MonoBehaviour
         {
             var level = levels[debugLevel];
             camera.transform.position = level.transform.position;
-            StartCoroutine(level.StartLevel());
+            StartCoroutine(level.StartLevel(this));
         }
     }
 
@@ -72,7 +89,7 @@ public class Game : MonoBehaviour
             yield return StartCoroutine(MovePositionOverTime(camera.transform, levels[currentLevel].transform.position));
             var level = levels[currentLevel];
             yield return StartCoroutine(ShowMessageToUser($"Level {currentLevel + 1} - {level.LevelName}"));
-            yield return StartCoroutine(level.StartLevel());
+            yield return StartCoroutine(level.StartLevel(this));
             yield return StartCoroutine(ShowMessageToUser($"Done Deal!"));
             currentLevel = (currentLevel + 1) % levels.Length;
         }
