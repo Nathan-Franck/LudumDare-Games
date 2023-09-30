@@ -61,15 +61,16 @@ public class Level : MonoBehaviour
         var solved = false;
         while (!solved)
         {
+            var totalLength = TotalLength();
             // Update all active cars
             for (int i = 0; i < activeCars.Count; i++)
             {
                 var car = activeCars[i];
-                var newProgess = car.Progress + Time.deltaTime * carSpeedScale * emptySpaces[i].carSpeed;
+                var newProgess = Mathf.Repeat(car.Progress + Time.deltaTime * carSpeedScale * emptySpaces[i].carSpeed, totalLength);
                 car.Transform.localPosition = LocationOnPath(newProgess);
                 var frontProgress = newProgess + carFront;
                 var backProgress = newProgess + carBack;
-                car.Transform.localRotation = Quaternion.LookRotation(LocationOnPath(backProgress) - LocationOnPath(frontProgress), Vector3.up);
+                car.Transform.localRotation = Quaternion.FromToRotation(Vector3.up, LocationOnPath(backProgress) - LocationOnPath(frontProgress));
                 activeCars[i] = new(car.Transform, newProgess);
             }
             // just wait for any key, then we're solved
@@ -81,7 +82,6 @@ public class Level : MonoBehaviour
                 {
                     var car = activeCars[i];
                     car.Transform.position = emptySpaces[i].space.position;
-                    car.Transform.rotation = emptySpaces[i].space.rotation;
                     parkedCars.Add(car.Transform);
                 }
                 activeCars.Clear();
