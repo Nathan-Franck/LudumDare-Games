@@ -4,7 +4,7 @@ using Unity.VisualScripting;
 using UnityEngine;
 
 [System.Serializable]
-public class LabelSettings
+public record LabelSettings
 {
     public float zOffset = -10f;
     public float Padding = .1f;
@@ -13,15 +13,12 @@ public class LabelSettings
     public int fontSize = 32;
 }
 
-[System.Serializable]
 public class LabelGfx
 {
-    [System.Serializable]
     public record LabelID(GameObject Icon, string Target);
-    [System.Serializable]
     public record Label(LabelID ID, Vector3 Position);
     private List<Label> labels = new List<Label>();
-    public Dictionary<LabelID, GameObject> labelRenderers = new Dictionary<LabelID, GameObject>();
+    private Dictionary<LabelID, GameObject> labelRenderers = new Dictionary<LabelID, GameObject>();
     private HashSet<LabelID> unusedRenderers = new HashSet<LabelID>();
     public Bounds Add(Label label)
     {

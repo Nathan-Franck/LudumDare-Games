@@ -1,27 +1,52 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection.Emit;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class Game : MonoBehaviour
 {
     public TracingSettings traceSettings = new TracingSettings();
     public LabelSettings labelSettings = new LabelSettings();
+    public BoundsSettings boundsSettings = new BoundsSettings();
+    public float fitTolerance = 0.25f;
+    [System.Serializable]
+    public class CarLabelSettings
+    {
+        public GameObject revealPrefab;
+        public GameObject collisionPrefab;
+        public GameObject dockablePrefab;
+        [DoNotSerialize]
+        [HideInInspector]
+        public string[] strings_diff = new string[] {
+            "mom.png",
+            "childhood_kitten.png",
+            "passwords.txt",
+            "bank_details.txt",
+            "social_security_number.txt",
+            "tax_return.pdf",
+            "nudes.png",
+            "budget.txt",
+            "diary.txt",
+            "gps_data.txt",
+            "browser_history.txt",
+            "emails.txt",
+            "photos.zip",
+            "videos.zip",
+            "music.zip",
+            "quarantine_diary.txt",
+            "lord_of_the_rings.md",
+        };
+        public AnimationCurve LineThicknessCurve;
+        public AnimationCurve LabelVerticalCurve;
+        public float TotalTime => Mathf.Max(LineThicknessCurve.keys[LineThicknessCurve.length - 1].time, LabelVerticalCurve.keys[LabelVerticalCurve.length - 1].time);
+        public Vector3 statusOffset = new Vector3(0.5f, 0.5f, 0);
+        public Vector3 collisionOffset = new Vector3(-0.25f, 0.0f, 0);
+        public float statusPositionQuantization = 0.5f;
+    }
+    public CarLabelSettings carLabelSettings = new CarLabelSettings();
     public Camera camera;
-    public GameObject carLabelPrefab;
-    public Vector3 carStatusLabelOffset = new Vector3(0.5f, 0.5f, 0);
-    public string[] LabelList = new string[] {
-        "mom.png",
-        "childhood_kitten.png",
-        "passwords.txt",
-        "bank_details.txt",
-        "social_security_number.txt",
-        "tax_return.pdf",
-        "nudes.png",
-        "budget.txt",
-        "diary.txt",
-        "gps_data.txt",
-    };
 
     public Level[] levels;
 
@@ -34,7 +59,7 @@ public class Game : MonoBehaviour
     };
     public DebugBehaviour debugBehaviour;
     public int debugLevel = 0;
-
+    public HashSet<string> usedLabels = new HashSet<string>();
 
     public int currentLevel;
 
@@ -48,7 +73,7 @@ public class Game : MonoBehaviour
         {
             var level = levels[debugLevel];
             camera.transform.position = level.transform.position;
-            StartCoroutine(level.StartLevel(this));
+            StartCoroutine(level.StartLevel(this, currentLevel));
         }
     }
 
@@ -88,9 +113,7 @@ public class Game : MonoBehaviour
         {
             yield return StartCoroutine(MovePositionOverTime(camera.transform, levels[currentLevel].transform.position));
             var level = levels[currentLevel];
-            yield return StartCoroutine(ShowMessageToUser($"Level {currentLevel + 1} - {level.LevelName}"));
-            yield return StartCoroutine(level.StartLevel(this));
-            yield return StartCoroutine(ShowMessageToUser($"Done Deal!"));
+            yield return StartCoroutine(level.StartLevel(this, currentLevel));
             currentLevel = (currentLevel + 1) % levels.Length;
         }
     }

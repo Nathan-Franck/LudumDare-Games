@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System;
+using System.Collections.Specialized;
 
 namespace System.Runtime.CompilerServices
 {
@@ -18,21 +19,218 @@ public class Level : MonoBehaviour
         public float designatedParkTime = 10;
         public float carSpeed = 4;
     }
-    public string LevelName = "Test";
-    public SpaceSettings[] emptySpaces;
-    public Vector3[] carPath;
-    public GameObject carPrefab;
     [System.Serializable]
     public record ActiveCar(Transform Transform, float Progress, string Label);
-    public List<ActiveCar> activeCars;
-    public List<Transform> parkedCars;
+    [Header("Settings")]
+    public string LevelName = "Test";
     public float timeToComplete = 30;
-    public float fitTolerance = 0.25f;
     public float carSpeedScale = 1.0f;
     public LabelGfx labelGfx = new LabelGfx();
     public TracingGfx tracingGfx = new TracingGfx();
+    public BoundsGfx collisionBoundsGfx = new BoundsGfx();
+    public BoundsGfx dockableBoundsGfx = new BoundsGfx();
 
-    public IEnumerator StartLevel(Game game)
+    [Header("Rigging")]
+    public SpaceSettings[] emptySpaces;
+    public Vector3[] carPath;
+    public GameObject carPrefab;
+    [Header("State")]
+    public List<ActiveCar> activeCars;
+    public List<Transform> parkedCars;
+    public bool solved;
+
+    public (List<List<Transform>>, List<Tuple<Transform, Transform>>) GetActionResults(Game game, float[] segmentProgresses)
+    {
+        var collisions = new List<List<Transform>>();
+        var dockables = new List<Tuple<Transform, Transform>>();
+
+        for (var i = 0; i < activeCars.Count; i++)
+        {
+            var car = activeCars[i];
+            for (var j = 0; j < emptySpaces.Length; j++)
+            {
+                var emptySpace = emptySpaces[j];
+                var sample = ClosestPointOnPath(emptySpace.space.position);
+                var parkProgress = segmentProgresses[sample.PathIndex] + sample.Progress;
+                if (Mathf.Abs(car.Progress - parkProgress) < game.fitTolerance)
+                {
+                    dockables.Add(new Tuple<Transform, Transform>(car.Transform, emptySpace.space));
+                }
+            }
+        }
+
+        for (var i = 0; i < activeCars.Count; i++)
+        {
+            var car = activeCars[i];
+            var carBounds = BoundsDictionary.Calculate(car.Transform.gameObject);
+            for (var j = i + 1; j < activeCars.Count; j++)
+            {
+                var otherCar = activeCars[j];
+                var otherCarBounds = BoundsDictionary.Calculate(otherCar.Transform.gameObject);
+                if (carBounds.Intersects(otherCarBounds))
+                {
+                    collisions.Add(new List<Transform> { car.Transform, otherCar.Transform });
+                }
+            }
+        }
+
+        // Merge any collisions that share a car
+        for (var i = 0; i < collisions.Count; i++)
+        {
+            var collision = collisions[i];
+            for (var j = i + 1; j < collisions.Count; j++)
+            {
+                var otherCollision = collisions[j];
+                if (collision.Intersect(otherCollision).Any())
+                {
+                    collision.AddRange(otherCollision);
+                    collisions.RemoveAt(j);
+                    j--;
+                }
+            }
+        }
+
+        // Any dockables that share the same space are collisions
+        for (var i = 0; i < dockables.Count; i++)
+        {
+            var dockable = dockables[i];
+            for (var j = i + 1; j < dockables.Count; j++)
+            {
+                var otherDockable = dockables[j];
+                if (dockable.Item2 == otherDockable.Item2)
+                {
+                    collisions.Add(new List<Transform> { dockable.Item1, otherDockable.Item1 });
+                    dockables.RemoveAt(j);
+                    j--;
+                }
+            }
+        }
+
+        // Any dockables that are also collisions are not dockables
+        for (var i = 0; i < dockables.Count; i++)
+        {
+            var dockable = dockables[i];
+            for (var j = 0; j < collisions.Count; j++)
+            {
+                var collision = collisions[j];
+                if (collision.Contains(dockable.Item1) || collision.Contains(dockable.Item2))
+                {
+                    dockables.RemoveAt(i);
+                    i--;
+                    break;
+                }
+            }
+        }
+
+        return new (collisions, dockables);
+    }
+
+    public IEnumerator LabelCars(Game game)
+    {
+        var segmentProgresses = SegmentProgresses();
+
+        collisionBoundsGfx.boundses.Clear();
+        collisionBoundsGfx.Update(game.boundsSettings);
+        dockableBoundsGfx.boundses.Clear();
+        dockableBoundsGfx.Update(game.boundsSettings);
+
+        // Reveal names of cars
+        {
+            var startTime = Time.time;
+            var bottomLeftScreen = Camera.main.ScreenToWorldPoint(new Vector3(0, 0, 0));
+            while (Time.time - startTime < game.carLabelSettings.TotalTime)
+            {
+                labelGfx.Clear();
+                tracingGfx.traces.Clear();
+
+                var stackHeight = game.carLabelSettings.LabelVerticalCurve.Evaluate(Time.time - startTime);
+                for (int i = 0; i < activeCars.Count; i++)
+                {
+                    var car = activeCars[i];
+                    var iconBounds = BoundsDictionary.Get(game.carLabelSettings.revealPrefab);
+                    // Label le car!
+                    var bounds = labelGfx.Add(new(new(game.carLabelSettings.revealPrefab, car.Label), Vector3.up * stackHeight + bottomLeftScreen + iconBounds.extents + Vector3.one * game.labelSettings.Padding));
+                    stackHeight += bounds.size.y + game.labelSettings.Padding + game.traceSettings.targetPadding;
+                    // Trace from label to car!
+                    tracingGfx.traces.Add(new(car.Transform, bounds));
+                }
+
+                // Update labels and tracing
+                labelGfx.Update(game.labelSettings);
+                tracingGfx.Update(game.traceSettings with { lineThickness = game.traceSettings.lineThickness * game.carLabelSettings.LineThicknessCurve.Evaluate(Time.time - startTime) });
+
+                yield return null;
+            }
+        }
+
+        // Hide all
+        labelGfx.Clear();
+        tracingGfx.traces.Clear();
+        labelGfx.Update(game.labelSettings);
+        tracingGfx.Update(game.traceSettings);
+
+        // Portray car statuses
+        {
+            while (!solved)
+            {
+                labelGfx.Clear();
+                collisionBoundsGfx.boundses.Clear();
+                dockableBoundsGfx.boundses.Clear();
+
+                var (collisions, dockables) = GetActionResults(game, segmentProgresses);
+
+                for (var collisionID = 0; collisionID < collisions.Count; collisionID++)
+                {
+                    var collision = collisions[collisionID];
+                    var collisionBounds = collision.Select(t => BoundsDictionary.Calculate(t.gameObject)).Aggregate((a, b) => { a.Encapsulate(b); return a; });
+                    var iconBounds = BoundsDictionary.Get(game.carLabelSettings.collisionPrefab);
+                    var position = new Vector3(collisionBounds.center.x, collisionBounds.min.y - game.boundsSettings.targetPadding * 2 - iconBounds.max.y, 0) + game.carLabelSettings.collisionOffset;
+                    var labelBounds = labelGfx.Add(new(new(game.carLabelSettings.collisionPrefab, "COLLISION_" + (char)('A' + collisionID)), position));
+                    var finalBounds = collisionBounds;
+                    finalBounds = new Bounds(finalBounds.center, finalBounds.size + 2 * game.boundsSettings.targetPadding * Vector3.one);
+                    collisionBoundsGfx.boundses.Add(finalBounds);
+                }
+
+                for (var dockableID = 0; dockableID < dockables.Count; dockableID++)
+                {
+                    var dockable = dockables[dockableID];
+                    var dockableBounds = BoundsDictionary.Calculate(dockable.Item1.gameObject);
+                    dockableBounds.Encapsulate(BoundsDictionary.Calculate(dockable.Item2.gameObject));
+                    var iconBounds = BoundsDictionary.Get(game.carLabelSettings.dockablePrefab);
+                    var position = new Vector3(dockableBounds.center.x, dockableBounds.min.y - game.boundsSettings.targetPadding * 2 - iconBounds.max.y, 0) + game.carLabelSettings.collisionOffset;
+                    var labelBounds = labelGfx.Add(new(new(game.carLabelSettings.dockablePrefab, "DOCKABLE_" + (char)('A' + dockableID)), position));
+                    dockableBounds = new Bounds(dockableBounds.center, dockableBounds.size + 2 * game.boundsSettings.targetPadding * Vector3.one);
+                    dockableBoundsGfx.boundses.Add(dockableBounds);
+                }
+
+                labelGfx.Update(game.labelSettings);
+                collisionBoundsGfx.Update(game.boundsSettings with { lineColor = Color.red });
+                dockableBoundsGfx.Update(game.boundsSettings with { lineColor = Color.green });
+
+                yield return null;
+            }
+        }
+
+        // Hide all
+        labelGfx.Clear();
+        tracingGfx.traces.Clear();
+        collisionBoundsGfx.boundses.Clear();
+        dockableBoundsGfx.boundses.Clear();
+        labelGfx.Update(game.labelSettings);
+        tracingGfx.Update(game.traceSettings);
+        collisionBoundsGfx.Update(game.boundsSettings);
+        dockableBoundsGfx.Update(game.boundsSettings);
+    }
+
+    public void UpdateCar(ActiveCar car, float newProgress, float carFront, float carBack)
+    {
+        car.Transform.localPosition = LocationOnPath(newProgress);
+        var frontProgress = newProgress + carFront;
+        var backProgress = newProgress + carBack;
+        car.Transform.localRotation = Quaternion.FromToRotation(Vector3.up, LocationOnPath(backProgress) - LocationOnPath(frontProgress));
+    }
+
+    public IEnumerator StartLevel(Game game, int currentLevel)
     {
         // Cleanup previous state
         foreach (var car in activeCars)
@@ -45,46 +243,64 @@ public class Level : MonoBehaviour
             Destroy(car.gameObject);
         }
         parkedCars.Clear();
+
         // Calculate the bounds of the car prefab
         var carBounds = carPrefab.GetComponents<Renderer>().Select(r => r.bounds)
             .Concat(carPrefab.GetComponents<SpriteRenderer>().Select(r => r.bounds))
             .Aggregate((a, b) => { a.Encapsulate(b); return a; });
         var carFront = carBounds.min.x - carPrefab.transform.position.x;
         var carBack = carBounds.max.x - carPrefab.transform.position.x;
+
         // Create le cars
         foreach (var initialCarProgress in InitialCarProgresses())
         {
-            var car = Instantiate(carPrefab, Vector3.zero, Quaternion.identity);
-            car.transform.parent = transform;
-            car.transform.localPosition = LocationOnPath(initialCarProgress);
-            activeCars.Add(new(car.transform, initialCarProgress, game.LabelList.Random()));
+            var carGo = Instantiate(carPrefab, Vector3.zero, Quaternion.identity);
+            carGo.transform.parent = transform;
+            carGo.transform.localPosition = LocationOnPath(initialCarProgress);
+            string label;
+            {
+                var labels = game.carLabelSettings.strings_diff.ToList();
+                foreach (var usedAlready in game.usedLabels)
+                {
+                    labels.Remove(usedAlready);
+                }
+                if (labels.Count == 0)
+                {
+                    labels = new List<string> { "ran_out_of_files.ohno" };
+                }
+                label = labels.Random();
+                game.usedLabels.Add(label);
+            }
+            var car = new ActiveCar(carGo.transform, initialCarProgress, label);
+            UpdateCar(car, initialCarProgress, carFront, carBack);
+            activeCars.Add(car);
         }
-        var solved = false;
+
+        StartCoroutine(game.ShowMessageToUser($"Level {currentLevel + 1} - {LevelName}"));
+
+        solved = false;
+
+        yield return new WaitForSeconds(0.5f);
+
+        StartCoroutine(LabelCars(game));
+
+        yield return new WaitForSeconds(1f);
+
+        // Level loop
         while (!solved)
         {
             labelGfx.Clear();
             tracingGfx.traces.Clear();
             var totalLength = TotalLength();
+
             // Update all active cars
             for (int i = 0; i < activeCars.Count; i++)
             {
                 var car = activeCars[i];
-                var newProgess = Mathf.Repeat(car.Progress + Time.deltaTime * carSpeedScale * emptySpaces[i].carSpeed, totalLength);
-                car.Transform.localPosition = LocationOnPath(newProgess);
-                var frontProgress = newProgess + carFront;
-                var backProgress = newProgess + carBack;
-                car.Transform.localRotation = Quaternion.FromToRotation(Vector3.up, LocationOnPath(backProgress) - LocationOnPath(frontProgress));
-                activeCars[i] = car with { Progress = newProgess };
-                // Label le car!
-                var bounds = labelGfx.Add(new (new (game.carLabelPrefab, car.Label), car.Transform.position + game.carStatusLabelOffset));
-
-                // Trace from label to car!
-                tracingGfx.traces.Add(new(car.Transform, bounds ));
+                var progress = Mathf.Repeat(car.Progress + Time.deltaTime * carSpeedScale * emptySpaces[i].carSpeed, totalLength);
+                UpdateCar(car, progress, carFront, carBack);
+                activeCars[i] = car with { Progress = progress };
             }
-
-            // Update labels and tracing
-            labelGfx.Update(game.labelSettings);
-            tracingGfx.Update(game.traceSettings);
 
             // just wait for any key, then we're solved
             if (Input.anyKeyDown)
@@ -101,6 +317,8 @@ public class Level : MonoBehaviour
             }
             yield return null;
         }
+
+        yield return StartCoroutine(game.ShowMessageToUser($"Done Deal!"));
     }
 
     public float[] InitialCarProgresses()
@@ -144,7 +362,7 @@ public class Level : MonoBehaviour
         for (int i = 0; i < emptySpaces.Length; i++)
         {
             var closestPoint = ClosestPointOnPath(emptySpaces[i].space.position).Point;
-            Gizmos.DrawWireSphere(closestPoint, fitTolerance);
+            Gizmos.DrawWireSphere(closestPoint, 0.25f);
         }
         foreach (var carProgress in InitialCarProgresses())
         {
