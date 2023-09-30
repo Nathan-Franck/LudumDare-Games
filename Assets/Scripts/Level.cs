@@ -74,6 +74,22 @@ public class Level : MonoBehaviour
             }
         }
 
+        // Any dockables that share the same space are collisions
+        for (var i = 0; i < dockables.Count; i++)
+        {
+            var dockable = dockables[i];
+            for (var j = i + 1; j < dockables.Count; j++)
+            {
+                var otherDockable = dockables[j];
+                if (dockable.Item2 == otherDockable.Item2)
+                {
+                    collisions.Add(new List<Transform> { dockable.Item1, otherDockable.Item1, dockable.Item2 });
+                    dockables.RemoveAt(j);
+                    j--;
+                }
+            }
+        }
+
         // Merge any collisions that share a car
         for (var i = 0; i < collisions.Count; i++)
         {
@@ -85,22 +101,6 @@ public class Level : MonoBehaviour
                 {
                     collision.AddRange(otherCollision);
                     collisions.RemoveAt(j);
-                    j--;
-                }
-            }
-        }
-
-        // Any dockables that share the same space are collisions
-        for (var i = 0; i < dockables.Count; i++)
-        {
-            var dockable = dockables[i];
-            for (var j = i + 1; j < dockables.Count; j++)
-            {
-                var otherDockable = dockables[j];
-                if (dockable.Item2 == otherDockable.Item2)
-                {
-                    collisions.Add(new List<Transform> { dockable.Item1, otherDockable.Item1 });
-                    dockables.RemoveAt(j);
                     j--;
                 }
             }
@@ -182,13 +182,12 @@ public class Level : MonoBehaviour
                 for (var collisionID = 0; collisionID < collisions.Count; collisionID++)
                 {
                     var collision = collisions[collisionID];
-                    var collisionBounds = collision.Select(t => BoundsDictionary.Calculate(t.gameObject)).Aggregate((a, b) => { a.Encapsulate(b); return a; });
+                    var collisionBounds = collision.Select(t => BoundsDictionary.Calculate(t.gameObject)).Aggregate((a, b) => { a.Encapsulate(b); return a; }).Quantize(game.carLabelSettings.quantization);
                     var iconBounds = BoundsDictionary.Get(game.carLabelSettings.collisionPrefab);
-                    var position = new Vector3(collisionBounds.center.x, collisionBounds.min.y - game.boundsSettings.targetPadding * 2 - iconBounds.max.y, 0) + game.carLabelSettings.collisionOffset;
-                    var labelBounds = labelGfx.Add(new(new(game.carLabelSettings.collisionPrefab, "COLLISION_" + (char)('A' + collisionID)), position));
-                    var finalBounds = collisionBounds;
-                    finalBounds = new Bounds(finalBounds.center, finalBounds.size + 2 * game.boundsSettings.targetPadding * Vector3.one);
-                    collisionBoundsGfx.boundses.Add(finalBounds);
+                    collisionBounds = new Bounds(collisionBounds.center, collisionBounds.size + 2 * game.boundsSettings.targetPadding * Vector3.one);
+                    var position = new Vector3(collisionBounds.min.x - iconBounds.min.x, collisionBounds.min.y - game.boundsSettings.targetPadding - iconBounds.max.y, 0);
+                    labelGfx.Add(new(new(game.carLabelSettings.collisionPrefab, "COLLISION_" + (char)('A' + collisionID)), position));
+                    collisionBoundsGfx.boundses.Add(collisionBounds);
                 }
 
                 for (var dockableID = 0; dockableID < dockables.Count; dockableID++)
@@ -196,10 +195,11 @@ public class Level : MonoBehaviour
                     var dockable = dockables[dockableID];
                     var dockableBounds = BoundsDictionary.Calculate(dockable.Item1.gameObject);
                     dockableBounds.Encapsulate(BoundsDictionary.Calculate(dockable.Item2.gameObject));
+                    dockableBounds = dockableBounds.Quantize(game.carLabelSettings.quantization);
                     var iconBounds = BoundsDictionary.Get(game.carLabelSettings.dockablePrefab);
-                    var position = new Vector3(dockableBounds.center.x, dockableBounds.min.y - game.boundsSettings.targetPadding * 2 - iconBounds.max.y, 0) + game.carLabelSettings.collisionOffset;
-                    var labelBounds = labelGfx.Add(new(new(game.carLabelSettings.dockablePrefab, "DOCKABLE_" + (char)('A' + dockableID)), position));
                     dockableBounds = new Bounds(dockableBounds.center, dockableBounds.size + 2 * game.boundsSettings.targetPadding * Vector3.one);
+                    var position = new Vector3(dockableBounds.min.x - iconBounds.min.x, dockableBounds.min.y - game.boundsSettings.targetPadding - iconBounds.max.y, 0);
+                    labelGfx.Add(new(new(game.carLabelSettings.dockablePrefab, "DOCKABLE_" + (char)('A' + dockableID)), position));
                     dockableBoundsGfx.boundses.Add(dockableBounds);
                 }
 

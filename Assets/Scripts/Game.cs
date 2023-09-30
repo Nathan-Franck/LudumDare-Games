@@ -26,7 +26,7 @@ public class Game : MonoBehaviour
             "bank_details.txt",
             "social_security_number.txt",
             "tax_return.pdf",
-            "nudes.png",
+            "homework.7z",
             "budget.txt",
             "diary.txt",
             "gps_data.txt",
@@ -42,8 +42,7 @@ public class Game : MonoBehaviour
         public AnimationCurve LabelVerticalCurve;
         public float TotalTime => Mathf.Max(LineThicknessCurve.keys[LineThicknessCurve.length - 1].time, LabelVerticalCurve.keys[LabelVerticalCurve.length - 1].time);
         public Vector3 statusOffset = new Vector3(0.5f, 0.5f, 0);
-        public Vector3 collisionOffset = new Vector3(-0.25f, 0.0f, 0);
-        public float statusPositionQuantization = 0.5f;
+        public float quantization = 0.5f;
     }
     public CarLabelSettings carLabelSettings = new CarLabelSettings();
     public Camera camera;

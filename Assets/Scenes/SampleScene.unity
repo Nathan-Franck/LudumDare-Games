@@ -2819,16 +2819,16 @@ MonoBehaviour:
   emptySpaces:
   - space: {fileID: 956859819}
     designatedParkTime: 1
-    carSpeed: 4
+    carSpeed: 1
   - space: {fileID: 2146451974}
     designatedParkTime: 1
-    carSpeed: 6
+    carSpeed: 2
   - space: {fileID: 1196552025}
     designatedParkTime: 1
-    carSpeed: 4
+    carSpeed: 1
   - space: {fileID: 1405374151}
     designatedParkTime: 1
-    carSpeed: 6
+    carSpeed: 2
   carPath:
   - {x: 1.8266317, y: -1.6146585, z: 0}
   - {x: -1.7277277, y: -1.7153361, z: 0}
@@ -4649,8 +4649,7 @@ MonoBehaviour:
       m_PostInfinity: 2
       m_RotationOrder: 4
     statusOffset: {x: 1, y: -1.5, z: 0}
-    collisionOffset: {x: -0.25, y: 0, z: 0}
-    statusPositionQuantization: 1
+    quantization: 0.5
   camera: {fileID: 519420031}
   levels:
   - {fileID: 1212898869}

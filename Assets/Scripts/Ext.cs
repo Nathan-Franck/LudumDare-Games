@@ -17,4 +17,29 @@ public static class Ext
             Mathf.Round(v.z / quant) * quant
         );
     }
+
+    public static Vector3 QuantizeFloor(this Vector3 v, float quant)
+    {
+        return new Vector3(
+            Mathf.Floor(v.x / quant) * quant,
+            Mathf.Floor(v.y / quant) * quant,
+            Mathf.Floor(v.z / quant) * quant
+        );
+    }
+
+    public static Vector3 QuantizeCeil(this Vector3 v, float quant)
+    {
+        return new Vector3(
+            Mathf.Ceil(v.x / quant) * quant,
+            Mathf.Ceil(v.y / quant) * quant,
+            Mathf.Ceil(v.z / quant) * quant
+        );
+    }
+
+    public static Bounds Quantize(this Bounds b, float quant)
+    {
+        var min = b.min.QuantizeFloor(quant);
+        var max = b.max.QuantizeCeil(quant);
+        return new Bounds((min + max) / 2, max - min);
+    }
 }
