@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: a5ea8fe2d72e0314f920587cd0e1be51
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 197705
+  packageName: Harmony 22 Gaming SDK
+  packageVersion: 2.0.0
+  assetPath: Assets/Toon Boom Harmony Gaming SDK/Editor/TBG Importer/AvatarMaker.cs
+  uploadId: 566187

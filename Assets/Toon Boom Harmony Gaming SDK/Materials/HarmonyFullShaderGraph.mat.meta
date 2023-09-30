@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e4fcb1e3c219da341a56039b592a68a0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 197705
+  packageName: Harmony 22 Gaming SDK
+  packageVersion: 2.0.0
+  assetPath: Assets/Toon Boom Harmony Gaming SDK/Materials/HarmonyFullShaderGraph.mat
+  uploadId: 566187

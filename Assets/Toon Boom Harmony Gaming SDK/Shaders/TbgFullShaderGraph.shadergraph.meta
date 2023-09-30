@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: c0c37bd26e1b6924a889579586380d7f
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {fileID: 11500000, guid: 625f186215c104763be7675aa2d941aa, type: 3}
+AssetOrigin:
+  serializedVersion: 1
+  productId: 197705
+  packageName: Harmony 22 Gaming SDK
+  packageVersion: 2.0.0
+  assetPath: Assets/Toon Boom Harmony Gaming SDK/Shaders/TbgFullShaderGraph.shadergraph
+  uploadId: 566187

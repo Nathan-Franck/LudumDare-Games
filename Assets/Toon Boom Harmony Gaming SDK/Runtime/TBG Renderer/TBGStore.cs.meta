@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: ab918e6e888ad6a4ba9b5578e7e6dfc2
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 197705
+  packageName: Harmony 22 Gaming SDK
+  packageVersion: 2.0.0
+  assetPath: Assets/Toon Boom Harmony Gaming SDK/Runtime/TBG Renderer/TBGStore.cs
+  uploadId: 566187

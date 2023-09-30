@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 817e39dd7126246b9aea5e9e7602bdc4
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 197705
+  packageName: Harmony 22 Gaming SDK
+  packageVersion: 2.0.0
+  assetPath: Assets/Toon Boom Harmony Gaming SDK/Plugins/Mac/HarmonyRenderer.bundle/Contents/MacOS/HarmonyRenderer
+  uploadId: 566187

@@ -1,0 +1,35 @@
+{
+    "name": "ToonBoom.TBGImporter",
+    "rootNamespace": "",
+    "references": [
+        "GUID:bd2461be96e5f744bbe6bdbc5276eb61",
+        "GUID:ce6baade223984afda3f24c7fca12584",
+        "GUID:2c573e6b271651846a79655161004c5b",
+        "GUID:7e93558c536f24149a3181fbe0a14523",
+        "GUID:41524c21c95e5fe4dbc5b48bd21995a4",
+        "GUID:d8b63aba1907145bea998dd612889d6b",
+        "GUID:f1b8880803e6a77448bf04ac0c73a8da"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.2d.animation",
+            "expression": "0.0.1",
+            "define": "ENABLE_UNITY_2D_ANIMATION"
+        },
+        {
+            "name": "com.unity.collections",
+            "expression": "0.0.1",
+            "define": "ENABLE_UNITY_COLLECTIONS"
+        }
+    ],
+    "noEngineReferences": false
+}

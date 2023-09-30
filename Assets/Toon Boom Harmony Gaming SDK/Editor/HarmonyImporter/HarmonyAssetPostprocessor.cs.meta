@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 2e7f830a92f68e14d9522b263ea4d914
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 197705
+  packageName: Harmony 22 Gaming SDK
+  packageVersion: 2.0.0
+  assetPath: Assets/Toon Boom Harmony Gaming SDK/Editor/HarmonyImporter/HarmonyAssetPostprocessor.cs
+  uploadId: 566187

@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: e6dcb0189b0ae734191aac2c9bb7399e
+timeCreated: 1461697815
+licenseType: Store
+ShaderImporter:
+  defaultTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 197705
+  packageName: Harmony 22 Gaming SDK
+  packageVersion: 2.0.0
+  assetPath: Assets/Toon Boom Harmony Gaming SDK/Shaders/HardwareSkinning.shader
+  uploadId: 566187

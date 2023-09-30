@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 1d36a15619e452a48a2c144ca33bb4a5
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 197705
+  packageName: Harmony 22 Gaming SDK
+  packageVersion: 2.0.0
+  assetPath: Assets/Toon Boom Harmony Gaming SDK/Runtime/HarmonyRenderer/Xml2Bin.cs
+  uploadId: 566187

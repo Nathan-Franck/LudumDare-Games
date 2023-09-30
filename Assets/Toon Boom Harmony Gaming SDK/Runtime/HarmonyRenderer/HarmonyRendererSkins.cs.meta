@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 9e7179a80d0f6444f8ba5bc9f6585f3a
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 197705
+  packageName: Harmony 22 Gaming SDK
+  packageVersion: 2.0.0
+  assetPath: Assets/Toon Boom Harmony Gaming SDK/Runtime/HarmonyRenderer/HarmonyRendererSkins.cs
+  uploadId: 566187

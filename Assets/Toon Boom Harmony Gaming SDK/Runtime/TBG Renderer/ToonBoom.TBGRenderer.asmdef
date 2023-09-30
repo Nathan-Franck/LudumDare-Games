@@ -1,0 +1,30 @@
+{
+    "name": "ToonBoom.TBGRenderer",
+    "rootNamespace": "",
+    "references": [
+        "GUID:41524c21c95e5fe4dbc5b48bd21995a4",
+        "GUID:d8b63aba1907145bea998dd612889d6b",
+        "GUID:2665a8d13d1b3f18800f46e256720795",
+        "GUID:e0cd26848372d4e5c891c569017e11f1"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.2d.animation",
+            "expression": "0.0.1",
+            "define": "ENABLE_UNITY_2D_ANIMATION"
+        },
+        {
+            "name": "com.unity.collections",
+            "expression": "0.0.1",
+            "define": "ENABLE_UNITY_COLLECTIONS"
+        }
+    ],
+    "noEngineReferences": false
+}

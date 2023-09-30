@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 1bfdfa7f49a101d42a5b7ad882e65d92
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 197705
+  packageName: Harmony 22 Gaming SDK
+  packageVersion: 2.0.0
+  assetPath: Assets/Toon Boom Harmony Gaming SDK/Editor/TBG Importer/TBGUserSettings.asset
+  uploadId: 566187

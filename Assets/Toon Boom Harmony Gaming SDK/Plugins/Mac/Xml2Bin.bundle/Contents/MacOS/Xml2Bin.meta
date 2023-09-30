@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 29c1fff6fee8e44e0bc991ad3e9ceadc
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 197705
+  packageName: Harmony 22 Gaming SDK
+  packageVersion: 2.0.0
+  assetPath: Assets/Toon Boom Harmony Gaming SDK/Plugins/Mac/Xml2Bin.bundle/Contents/MacOS/Xml2Bin
+  uploadId: 566187
