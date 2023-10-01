@@ -300,9 +300,9 @@ public class Level : MonoBehaviour
         var failing = true;
         while (failing)
         {
-
             state = State.Intro;
             missedClicks = 0;
+            game.timerText.enabled = false;
 
             // Cleanup previous state
             foreach (var car in activeCars)
@@ -375,7 +375,8 @@ public class Level : MonoBehaviour
                     activeCars[i] = car with { Progress = progress };
                 }
 
-                if (state == State.Interactable && Input.GetMouseButtonDown(0))
+                var validInput = Input.GetMouseButtonDown(0) || Input.touchCount > 0 || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
+                if (state == State.Interactable && validInput)
                 {
                     var noDocks = parked.Count == 0;
                     var (collisions, docks) = GetActionResults(game, SegmentProgresses());
