@@ -38,7 +38,7 @@ public class Level : MonoBehaviour
     public GameObject carPrefab;
     [Header("State")]
     public List<ActiveCar> activeCars;
-    public List<Tuple<Transform, Transform>> parkedCars = new List<Tuple<Transform, Transform>>();
+    public List<Tuple<Transform, Transform>> parked = new List<Tuple<Transform, Transform>>();
     public enum State
     {
         Intro,
@@ -46,6 +46,7 @@ public class Level : MonoBehaviour
         FailedCollision,
         FailedTimeOut,
         Solved,
+        Perfect,
     };
     public State state;
     public float timeLeft;
@@ -62,7 +63,7 @@ public class Level : MonoBehaviour
             for (var j = 0; j < emptySpaces.Length; j++)
             {
                 var emptySpace = emptySpaces[j];
-                if (parkedCars.Any(parked => parked.Item2 == emptySpace.space))
+                if (parked.Any(parked => parked.Item2 == emptySpace.space))
                 {
                     continue;
                 }
@@ -253,7 +254,9 @@ public class Level : MonoBehaviour
         car.Transform.localPosition = LocationOnPath(newProgress);
         var frontProgress = newProgress + carFront;
         var backProgress = newProgress + carBack;
-        car.Transform.localRotation = Quaternion.FromToRotation(Vector3.up, LocationOnPath(backProgress) - LocationOnPath(frontProgress)) * carPrefab.transform.localRotation;
+        var delta = LocationOnPath(backProgress) - LocationOnPath(frontProgress);
+        var angle = Mathf.Atan2(delta.y, delta.x) * Mathf.Rad2Deg;
+        car.Transform.localRotation = Quaternion.AngleAxis(angle, Vector3.forward) * carPrefab.transform.localRotation;
     }
 
     public IEnumerator Timer(Game game)
@@ -302,11 +305,11 @@ public class Level : MonoBehaviour
                 Destroy(car.Transform.gameObject);
             }
             activeCars.Clear();
-            foreach (var parked in parkedCars)
+            foreach (var parked in parked)
             {
                 Destroy(parked.Item1.gameObject);
             }
-            parkedCars.Clear();
+            parked.Clear();
 
             // Calculate the bounds of the car prefab
             var carBounds = carPrefab.GetComponents<Renderer>().Select(r => r.bounds)
@@ -354,7 +357,7 @@ public class Level : MonoBehaviour
             yield return new WaitForSeconds(0.75f);
 
             // Level loop
-            while (state != State.Solved && state != State.FailedCollision && state != State.FailedTimeOut)
+            while (state != State.Solved && state != State.Perfect && state != State.FailedCollision && state != State.FailedTimeOut)
             {
                 var totalLength = TotalLength();
 
@@ -367,9 +370,9 @@ public class Level : MonoBehaviour
                     activeCars[i] = car with { Progress = progress };
                 }
 
-                // just wait for any key, then we're solved
                 if (state == State.Interactable && Input.GetMouseButtonDown(0))
                 {
+                    var noDocks = parked.Count == 0;
                     var (collisions, docks) = GetActionResults(game, SegmentProgresses());
 
                     if (collisions.Count > 0)
@@ -383,15 +386,18 @@ public class Level : MonoBehaviour
                         var dock = docks[i];
                         var car = dock.Item1;
                         var space = dock.Item2;
-                        car.rotation = space.rotation * carPrefab.transform.localRotation * game.carParkRotation;
+                        car.rotation = space.rotation * carPrefab.transform.localRotation * Quaternion.Euler(game.carParkEulers);
                         StartCoroutine(Dock(game, car, space.TransformPoint(game.carParkOffset)));
-                        parkedCars.Add(new(car, space));
+                        parked.Add(new(car, space));
                         activeCars.Remove(activeCars.First(c => c.Transform == car));
                     }
 
                     if (activeCars.Count == 0)
                     {
-                        state = State.Solved;
+                        if (noDocks)
+                            state = State.Perfect;
+                        else
+                            state = State.Solved;
                         continue;
                     }
                 }
@@ -409,10 +415,16 @@ public class Level : MonoBehaviour
             {
                 failing = false;
             }
+            else if (state == State.Perfect)
+            {
+                failing = false;
+            }
         }
 
-
-        yield return StartCoroutine(game.ShowMessageToUser($"Done Deal!"));
+        if (state == State.Solved)
+            yield return StartCoroutine(game.ShowMessageToUser($"RESOLVED "));
+        else if (state == State.Perfect)
+            yield return StartCoroutine(game.ShowMessageToUser($"*** PERFECT ***"));
     }
 
     public IEnumerator Dock(Game game, Transform car, Vector3 position)

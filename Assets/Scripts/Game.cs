@@ -68,7 +68,7 @@ public class Game : MonoBehaviour
 
     public int currentLevel;
     public Vector3 carParkOffset = new Vector3(0, 0.23f, 0);
-    public Quaternion carParkRotation = Quaternion.Euler(0, 0, 90);
+    public Vector3 carParkEulers = new Vector3(0, 0, 90);
     public AnimationCurve failPulse;
     public Vector3 cameraFocusPoint = new Vector3(0, 0, -10);
 
