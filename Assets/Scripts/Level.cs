@@ -39,7 +39,7 @@ public class Level : MonoBehaviour
     public List<Transform> parkedCars;
     public bool solved;
     public float timeLeft;
-    
+
 
     public (List<List<Transform>>, List<Tuple<Transform, Transform>>) GetActionResults(Game game, float[] segmentProgresses)
     {
@@ -124,7 +124,7 @@ public class Level : MonoBehaviour
             }
         }
 
-        return new (collisions, dockables);
+        return new(collisions, dockables);
     }
 
     public IEnumerator LabelCars(Game game)
@@ -231,10 +231,11 @@ public class Level : MonoBehaviour
         car.Transform.localPosition = LocationOnPath(newProgress);
         var frontProgress = newProgress + carFront;
         var backProgress = newProgress + carBack;
-        car.Transform.localRotation = Quaternion.FromToRotation(Vector3.up, LocationOnPath(backProgress) - LocationOnPath(frontProgress));
+        car.Transform.localRotation = Quaternion.FromToRotation(Vector3.up, LocationOnPath(backProgress) - LocationOnPath(frontProgress)) * carPrefab.transform.localRotation;
     }
 
-    public IEnumerator Timer() {
+    public IEnumerator Timer()
+    {
 
         // timeLeft = timeToComplete;
         // var timeText = 
@@ -320,6 +321,8 @@ public class Level : MonoBehaviour
             // just wait for any key, then we're solved
             if (Input.anyKeyDown)
             {
+
+                var actionResults = GetActionResults(game, SegmentProgresses());
                 solved = true;
                 // Force-park all cars
                 for (int i = 0; i < activeCars.Count; i++)
