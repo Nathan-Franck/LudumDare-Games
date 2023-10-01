@@ -245,7 +245,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8574649
 RectTransform:
   m_ObjectHideFlags: 0
@@ -398,7 +398,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &37426440
 Transform:
   m_ObjectHideFlags: 0
@@ -3344,7 +3344,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.24968849, g: 0.26631907, b: 0.2924528, a: 0}
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -3740,15 +3740,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7287263684305758831, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.01
+      value: 0.0046083
       objectReference: {fileID: 0}
     - target: {fileID: 7287263684305758831, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.01
+      value: 0.0046083
       objectReference: {fileID: 0}
     - target: {fileID: 7287263684305758831, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.01
+      value: 0.0046083
       objectReference: {fileID: 0}
     - target: {fileID: 7287263684305758831, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
       propertyPath: m_LocalPosition.x
@@ -3756,11 +3756,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7287263684305758831, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -0.06
       objectReference: {fileID: 0}
     - target: {fileID: 7287263684305758831, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 16.04
+      value: 7.51
       objectReference: {fileID: 0}
     - target: {fileID: 7287263684305758831, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
       propertyPath: m_LocalRotation.w
@@ -9177,7 +9177,7 @@ MonoBehaviour:
   traceSettings:
     zOffset: -0.6
     targetPadding: 0.1
-    lineThickness: 0.2
+    lineThickness: 0.5
     lineColor: {r: 1, g: 1, b: 1, a: 1}
   labelSettings:
     zOffset: -0.6
@@ -9626,6 +9626,9 @@ MonoBehaviour:
   initialCameraPosition: {x: 0, y: 0, z: 0}
   beepSource: {fileID: 1768492898}
   introAnimator: {fileID: 627752736}
+  enableAfterIntro:
+  - {fileID: 37426439}
+  - {fileID: 8574648}
 --- !u!4 &1941533725
 Transform:
   m_ObjectHideFlags: 0

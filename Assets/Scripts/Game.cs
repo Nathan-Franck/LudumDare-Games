@@ -76,6 +76,7 @@ public class Game : MonoBehaviour
     public Vector3 initialCameraPosition;
     public AudioSource beepSource;
     public Animator introAnimator;
+    public GameObject[] enableAfterIntro;
 
     void Start()
     {
@@ -160,6 +161,17 @@ public class Game : MonoBehaviour
 
     IEnumerator StartGame()
     {
+        // Figure out how long animator state is and wait that many seconds
+        var stateInfo = introAnimator.GetCurrentAnimatorStateInfo(0);
+        yield return new WaitForSeconds(stateInfo.length);
+        introAnimator.gameObject.SetActive(false);
+        // Enable things after intro
+        foreach (var go in enableAfterIntro)
+        {
+            go.SetActive(true);
+        }
+        var overlay = camera.GetComponent<Overlay>();
+        overlay.ScreenBlackout = 1;
         var userWantsAgain = true;
         yield return StartCoroutine(ShowMessageToUser("Lets play a game"));
         while (userWantsAgain)

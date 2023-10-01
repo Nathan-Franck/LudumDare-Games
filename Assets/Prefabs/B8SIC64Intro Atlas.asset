@@ -19,7 +19,7 @@ SpriteAtlas:
       generateMipMaps: 1
       readable: 0
       crunchedCompression: 0
-      sRGB: 0
+      sRGB: 1
     platformSettings:
     - serializedVersion: 3
       m_BuildTarget: DefaultTexturePlatform
@@ -57,10 +57,37 @@ SpriteAtlas:
     bindAsDefault: 1
     isAtlasV2: 0
     cachedData: {fileID: 0}
-    packedSpriteRenderDataKeys: []
+    packedSpriteRenderDataKeys:
+    - 2d8f1bc20b684b14dabc12b11fafdec3: -7562550026711720883
+    - 2d8f1bc20b684b14dabc12b11fafdec3: -7769077721872047019
+    - 2d8f1bc20b684b14dabc12b11fafdec3: -8817688350332196670
+    - 2d8f1bc20b684b14dabc12b11fafdec3: 5570715558939696281
+    - 2d8f1bc20b684b14dabc12b11fafdec3: -9080521459392258730
+    - 2d8f1bc20b684b14dabc12b11fafdec3: -2331167174137485293
+    - 2d8f1bc20b684b14dabc12b11fafdec3: 134006855235689933
+    - 2d8f1bc20b684b14dabc12b11fafdec3: 5099634231300632239
+    - 2d8f1bc20b684b14dabc12b11fafdec3: -8158166234146922044
   m_MasterAtlas: {fileID: 0}
-  m_PackedSprites: []
-  m_PackedSpriteNamesToIndex: []
+  m_PackedSprites:
+  - {fileID: -7562550026711720883, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
+  - {fileID: -7769077721872047019, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
+  - {fileID: -8817688350332196670, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
+  - {fileID: 5570715558939696281, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
+  - {fileID: -9080521459392258730, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
+  - {fileID: -2331167174137485293, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
+  - {fileID: 134006855235689933, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
+  - {fileID: 5099634231300632239, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
+  - {fileID: -8158166234146922044, guid: 2d8f1bc20b684b14dabc12b11fafdec3, type: 3}
+  m_PackedSpriteNamesToIndex:
+  - 720p-BKHacker-B64Frame002_0.png
+  - 720p-BKHacker-WhiteBlock_1_0.png
+  - 720p-BKHacker-B64Frame001_0.png
+  - 720p-BKHacker-GlowingBK_0.png
+  - 720p-BKHacker-B64Frame003_0.png
+  - 720p-BKHacker-BackGround_0.png
+  - 720p-BKHacker-B64Skull_0.png
+  - 720p-BKHacker-WhiteBlock_0.png
+  - 720p-BKHacker-Black_0.png
   m_RenderDataMap: {}
   m_Tag: B8SIC64Intro Atlas
   m_IsVariant: 0
