@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "com.unity.2d.animation": "10.0.3",
+    "com.unity.2d.animation": "9.0.3",
     "com.unity.burst": "1.8.8",
     "com.unity.collab-proxy": "2.1.0",
     "com.unity.collections": "1.4.0",
