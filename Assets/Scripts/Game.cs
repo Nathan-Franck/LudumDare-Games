@@ -160,7 +160,7 @@ public class Game : MonoBehaviour
         yield return StartCoroutine(ShowMessageToUser("Lets play a game"));
         while (userWantsAgain)
         {
-            yield return StartCoroutine(FadeFromBlack());
+            StartCoroutine(FadeFromBlack());
             while (currentLevel < levels.Length)
             {
                 yield return StartCoroutine(MovePositionOverTime(camera.transform, levels[currentLevel].transform.position + cameraFocusPoint));
