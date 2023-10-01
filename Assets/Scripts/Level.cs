@@ -23,7 +23,7 @@ public class Level : MonoBehaviour
         public float carSpeed = 4;
     }
     [System.Serializable]
-    public record ActiveCar(Transform Transform, float Progress, string Label);
+    public record ActiveCar(Transform Transform, float Speed, float Progress, string Label);
     [Header("Settings")]
     public string LevelName = "Test";
     public float timeToComplete = 30;
@@ -350,8 +350,10 @@ public class Level : MonoBehaviour
             {
                 game.usedLabels.Clear();
             }
-            foreach (var initialCarProgress in initialCarProgresses)
+            
+            for (var i = 0; i < initialCarProgresses.Length; i++)
             {
+                var initialCarProgress = initialCarProgresses[i];
                 var carGo = Instantiate(carPrefab, Vector3.zero, Quaternion.identity);
                 carGo.transform.parent = transform;
                 carGo.transform.localPosition = LocationOnPath(initialCarProgress);
@@ -365,7 +367,7 @@ public class Level : MonoBehaviour
                     label = labels.Random();
                     game.usedLabels.Add(label);
                 }
-                var car = new ActiveCar(carGo.transform, initialCarProgress, label);
+                var car = new ActiveCar(carGo.transform, emptySpaces[i].carSpeed, initialCarProgress, label);
                 UpdateCar(car, initialCarProgress, carFront, carBack);
                 activeCars.Add(car);
             }
@@ -391,7 +393,7 @@ public class Level : MonoBehaviour
                 for (int i = 0; i < activeCars.Count; i++)
                 {
                     var car = activeCars[i];
-                    var progress = Mathf.Repeat(car.Progress + Time.deltaTime * carSpeedScale * emptySpaces[i].carSpeed, totalLength);
+                    var progress = Mathf.Repeat(car.Progress + Time.deltaTime * carSpeedScale * car.Speed, totalLength);
                     UpdateCar(car, progress, carFront, carBack);
                     activeCars[i] = car with { Progress = progress };
                 }
