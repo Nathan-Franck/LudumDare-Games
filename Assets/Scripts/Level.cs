@@ -392,6 +392,13 @@ public class Level : MonoBehaviour
                         activeCars.Remove(activeCars.First(c => c.Transform == car));
                     }
 
+                    // Punish 0 docks - 1 second penalty
+                    if (docks.Count == 0)
+                    {
+                        timeLeft -= 1;
+                        StartCoroutine(Flash(game.timerText, .5f));
+                    }
+
                     if (activeCars.Count == 0)
                     {
                         if (noDocks)

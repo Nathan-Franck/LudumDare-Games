@@ -2045,7 +2045,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   LevelName: think fast
-  timeToComplete: 7
+  timeToComplete: 10
   carSpeedScale: 1
   emptySpaces:
   - space: {fileID: 661344557}
@@ -7025,7 +7025,7 @@ MonoBehaviour:
     m_RotationOrder: 4
   dockVector: {x: 0, y: 1, z: 0}
   labelFont: {fileID: 12800000, guid: c28b640affbd1c642b7de554913c76f1, type: 3}
-  debugBehaviour: 1
+  debugBehaviour: 0
   debugLevel: 4
   currentLevel: 0
   carParkOffset: {x: 0, y: -0.23, z: -0.01}
