@@ -441,6 +441,7 @@ public class Level : MonoBehaviour
                 }
                 yield return null;
             }
+            game.beepSource.Play();
             if (state == State.FailedCollision)
             {
                 yield return StartCoroutine(game.ShowMessageToUser($">overwrite -y"));

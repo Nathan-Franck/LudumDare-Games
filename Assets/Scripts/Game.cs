@@ -74,6 +74,7 @@ public class Game : MonoBehaviour
     public Vector3 cameraFocusPoint = new Vector3(0, 0, -10);
     public int filesDeleted = 0;
     public Vector3 initialCameraPosition;
+    public AudioSource beepSource;
 
     void Start()
     {
