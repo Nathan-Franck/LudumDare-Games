@@ -19,8 +19,8 @@ public class Game : MonoBehaviour
         public GameObject dockablePrefab;
         [DoNotSerialize]
         [HideInInspector]
-        public string[] strings_diff = new string[] {
-            "mom.png",
+        public string[] car_names = new string[] {
+            "1994_family_memories.png",
             "childhood_kitten.png",
             "passwords.txt",
             "bank_details.txt",
@@ -28,7 +28,7 @@ public class Game : MonoBehaviour
             "tax_return.pdf",
             "homework.7z",
             "budget.txt",
-            "diary.txt",
+            "DIARY_JAN_04.txt",
             "gps_data.txt",
             "browser_history.txt",
             "emails.txt",
@@ -44,13 +44,17 @@ public class Game : MonoBehaviour
         public Vector3 statusOffset = new Vector3(0.5f, 0.5f, 0);
         public float quantization = 0.5f;
     }
+    public float animationCurveQuantum = 0.05f;
     public CarLabelSettings carLabelSettings = new CarLabelSettings();
     public Camera camera;
 
     public Level[] levels;
 
     public TMPro.TextMeshProUGUI userMessageText;
+    public TMPro.TextMeshProUGUI timerText;
+    public TMPro.TextMeshProUGUI attemptsText;
     public AnimationCurve userMessageAnimationCurve;
+    public Font labelFont;
     public enum DebugBehaviour
     {
         PlayFromBeginning,
@@ -64,6 +68,9 @@ public class Game : MonoBehaviour
 
     void Start()
     {
+        userMessageText.enabled = false;
+        timerText.enabled = false;
+        attemptsText.enabled = false;
         if (debugBehaviour == DebugBehaviour.PlayFromBeginning)
         {
             StartCoroutine(StartGame());
@@ -100,7 +107,7 @@ public class Game : MonoBehaviour
         var startTime = Time.time;
         while (Time.time - startTime < animationCurve.keys[animationCurve.length - 1].time)
         {
-            transform.localScale = Vector3.one * animationCurve.Evaluate(Time.time - startTime);
+            transform.localScale = Vector3.one * animationCurve.Evaluate((Time.time - startTime).Quantize(animationCurveQuantum));
             yield return null;
         }
     }
