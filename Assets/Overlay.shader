@@ -44,10 +44,12 @@ Shader "Hidden/Overlay"
 
             fixed4 frag (v2f i) : SV_Target
             {
-                float2 uv = i.uv + _CRT_Distortion * sin(i.uv.y * 300) * float2(0.002, 0);
-                fixed r = tex2D(_MainTex, uv + _ChromaticAberration * float2(0.002, 0)).r;
-                fixed g = tex2D(_MainTex, uv + _ChromaticAberration * float2(0, 0.002)).g;
-                fixed b = tex2D(_MainTex, uv + _ChromaticAberration * float2(-0.002, 0)).b;
+                float ca = _ChromaticAberration * (1 + _ScreenBlackout * 10);
+                float crt = _CRT_Distortion * (1 + _ScreenBlackout * 10);
+                float2 uv = i.uv + crt * sin(i.uv.y * 300) * float2(0.002, 0);
+                fixed r = tex2D(_MainTex, uv + ca * float2(0.002, 0)).r;
+                fixed g = tex2D(_MainTex, uv + ca * float2(0, 0.002)).g;
+                fixed b = tex2D(_MainTex, uv + ca * float2(-0.002, 0)).b;
                 fixed4 col = fixed4(r, g, b, 1);
                 col.rgb -= _ScreenBlackout;
                 return col;

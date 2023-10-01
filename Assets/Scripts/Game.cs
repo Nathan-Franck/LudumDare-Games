@@ -140,6 +140,7 @@ public class Game : MonoBehaviour
             overlay.ScreenBlackout = 1 - t;
             yield return null;
         }
+        overlay.ScreenBlackout = 0;
     }
 
     public IEnumerator FadeToBlack(float time = 1.0f)
@@ -152,6 +153,7 @@ public class Game : MonoBehaviour
             overlay.ScreenBlackout = t;
             yield return null;
         }
+        overlay.ScreenBlackout = 1;
     }
 
     IEnumerator StartGame()

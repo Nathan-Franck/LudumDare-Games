@@ -6595,18 +6595,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   traceSettings:
-    zOffset: -1
+    zOffset: -0.6
     targetPadding: 0.1
     lineThickness: 0.2
     lineColor: {r: 1, g: 1, b: 1, a: 1}
   labelSettings:
-    zOffset: -1
+    zOffset: -0.6
     Padding: 0.1
     textColor: {r: 1, g: 1, b: 1, a: 1}
     textScale: 0.1
     fontSize: 32
   boundsSettings:
-    zOffset: -1
+    zOffset: -0.6
     targetPadding: 0.1
     lineThickness: 0.3
     lineColor: {r: 1, g: 1, b: 1, a: 1}

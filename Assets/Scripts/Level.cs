@@ -201,7 +201,7 @@ public class Level : MonoBehaviour
 
         // Portray car statuses
         {
-            while (state == State.Interactable || state == State.FailedCollision)
+            while (state == State.Interactable || state == State.FailedCollision || state == State.FailedTimeOut)
             {
                 labelGfx.Clear();
                 collisionBoundsGfx.boundses.Clear();
@@ -220,7 +220,18 @@ public class Level : MonoBehaviour
                     collisionBoundsGfx.boundses.Add(collisionBounds);
                 }
 
-                if (state != State.FailedCollision)
+                if (state == State.FailedTimeOut)
+                {
+                    // Draw a flashing red box around all the active cars
+                    var activeCarBounds = activeCars.Select(c => BoundsDictionary.Calculate(c.Transform.gameObject)).Aggregate((a, b) => { a.Encapsulate(b); return a; }).Quantize(game.carLabelSettings.quantization);
+                    var iconBounds = BoundsDictionary.Get(game.carLabelSettings.collisionPrefab);
+                    activeCarBounds = new Bounds(activeCarBounds.center, activeCarBounds.size + 2 * game.boundsSettings.targetPadding * Vector3.one);
+                    var position = new Vector3(activeCarBounds.min.x - iconBounds.min.x, activeCarBounds.min.y - game.boundsSettings.targetPadding - iconBounds.max.y, 0);
+                    labelGfx.Add(new(new(game.carLabelSettings.collisionPrefab, "err: file not found"), position));
+                    collisionBoundsGfx.boundses.Add(activeCarBounds);
+                }
+
+                if (state == State.Interactable)
                 {
                     for (var dockableID = 0; dockableID < dockables.Count; dockableID++)
                     {
@@ -237,7 +248,7 @@ public class Level : MonoBehaviour
                 }
 
                 labelGfx.Update(game.labelSettings);
-                collisionBoundsGfx.Update(state == State.FailedCollision
+                collisionBoundsGfx.Update(state == State.FailedCollision || state == State.FailedTimeOut
                     ? game.boundsSettings with { lineColor = Color.red, lineThickness = game.boundsSettings.lineThickness * game.failPulse.Evaluate(Time.time) }
                     : game.boundsSettings with { lineColor = Color.red });
                 dockableBoundsGfx.Update(game.boundsSettings with { lineColor = Color.green });
