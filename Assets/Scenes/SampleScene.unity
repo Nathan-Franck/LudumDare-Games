@@ -1180,11 +1180,11 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1401214073}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 12, y: 0}
+  m_AnchorMin: {x: 1, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: -12, y: -38}
   m_SizeDelta: {x: 200, y: 50}
-  m_Pivot: {x: 0, y: 1}
+  m_Pivot: {x: 1, y: 1}
 --- !u!114 &472054110
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1205,7 +1205,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 12 futile_attempts_remaining
+  m_text: attempts_remaining = 10
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
   m_sharedMaterial: {fileID: 2140032, guid: dc36b3fdc14f47ebb36fd484a67e268a, type: 2}
@@ -1239,7 +1239,7 @@ MonoBehaviour:
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
+  m_HorizontalAlignment: 4
   m_VerticalAlignment: 1024
   m_textAlignment: 65535
   m_characterSpacing: 0
@@ -1442,8 +1442,7 @@ MonoBehaviour:
   - {x: 1.7055672, y: 0.39509368, z: 0}
   carPrefab: {fileID: 6106706168049891997, guid: b7b1c824599aa7d4d8242812c3dd0e5b, type: 3}
   activeCars: []
-  parkedCars: []
-  solved: 0
+  state: 0
   timeLeft: 0
 --- !u!4 &568196448
 Transform:
@@ -2269,10 +2268,11 @@ Transform:
   m_GameObject: {fileID: 956859818}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: 0.705488, w: -0.7087218}
-  m_LocalPosition: {x: -2.5, y: -0.39, z: 0.038074274}
-  m_LocalScale: {x: 1.1457715, y: 0.5914174, z: 1}
+  m_LocalPosition: {x: -2.4692, y: -0.39, z: 0.038074274}
+  m_LocalScale: {x: 1.1457715, y: 0.53035325, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1024896139}
   m_Father: {fileID: 1212898868}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -89.738}
 --- !u!65 &956859820
@@ -2660,6 +2660,111 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 987356164}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1024896138
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1024896139}
+  - component: {fileID: 1024896142}
+  - component: {fileID: 1024896141}
+  - component: {fileID: 1024896140}
+  m_Layer: 0
+  m_Name: Cube
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1024896139
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1024896138}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0, z: -0.705488, w: -0.7087218}
+  m_LocalPosition: {x: 0, y: 0.23, z: 0.08198583}
+  m_LocalScale: {x: 0.4610023, y: 0.5627713, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 956859819}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1024896140
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1024896138}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!23 &1024896141
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1024896138}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1024896142
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1024896138}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1060002896
 GameObject:
@@ -3140,21 +3245,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   LevelName: Into the Grid
-  timeToComplete: 30
+  timeToComplete: 1
   carSpeedScale: 1
   emptySpaces:
   - space: {fileID: 956859819}
-    designatedParkTime: 1
+    designatedParkTime: 15
     carSpeed: 1
   - space: {fileID: 2146451974}
-    designatedParkTime: 1
+    designatedParkTime: 15
     carSpeed: 2
   - space: {fileID: 1196552025}
-    designatedParkTime: 1
-    carSpeed: 1
+    designatedParkTime: 15
+    carSpeed: 3
   - space: {fileID: 1405374151}
-    designatedParkTime: 1
-    carSpeed: 2
+    designatedParkTime: 15
+    carSpeed: 4
   carPath:
   - {x: 1.8266317, y: -1.6146585, z: 0}
   - {x: -1.7277277, y: -1.7153361, z: 0}
@@ -3164,8 +3269,7 @@ MonoBehaviour:
   - {x: 1.864379, y: 0.4138111, z: 0}
   carPrefab: {fileID: 6106706168049891997, guid: b7b1c824599aa7d4d8242812c3dd0e5b, type: 3}
   activeCars: []
-  parkedCars: []
-  solved: 0
+  state: 0
   timeLeft: 0
 --- !u!1 &1238537815
 GameObject:
@@ -4300,8 +4404,7 @@ MonoBehaviour:
   - {x: 1.705283, y: 0.39510036, z: 0}
   carPrefab: {fileID: 6106706168049891997, guid: b7b1c824599aa7d4d8242812c3dd0e5b, type: 3}
   activeCars: []
-  parkedCars: []
-  solved: 0
+  state: 0
   timeLeft: 0
 --- !u!4 &1592667184
 Transform:
@@ -5175,10 +5278,142 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  dockCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0.0014648438
+      value: 0.65949166
+      inSlope: 0.894238
+      outSlope: 0.894238
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.1492652
+    - serializedVersion: 3
+      time: 0.2774225
+      value: 0.7106366
+      inSlope: -0.006001119
+      outSlope: -0.006001119
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.5719836
+    - serializedVersion: 3
+      time: 0.5
+      value: 0.0037389859
+      inSlope: -3.6833653
+      outSlope: -3.6833653
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.12244234
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.50820625
+      value: 0.012078346
+      inSlope: 1.8912373
+      outSlope: 1.8912373
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.60110533
+      value: 0.07342624
+      inSlope: 0.15639126
+      outSlope: 0.15639126
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.8401108
+      value: 0.001725758
+      inSlope: -0.3793835
+      outSlope: -0.3793835
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.9113264
+      value: 0.007858571
+      inSlope: 0.058818553
+      outSlope: 0.058818553
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  dockVector: {x: 0, y: 1, z: 0}
   labelFont: {fileID: 12800000, guid: c28b640affbd1c642b7de554913c76f1, type: 3}
-  debugBehaviour: 1
+  debugBehaviour: 0
   debugLevel: 0
   currentLevel: 0
+  carParkOffset: {x: 0, y: 0.23, z: -1}
+  carParkRotation: {x: 0, y: 0, z: 0.70710677, w: 0.70710677}
+  failPulse:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: -0.0014953613
+      value: 2.5073328
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.026855879
+      value: -0.0015512252
+      inSlope: -0.023790509
+      outSlope: -0.023790509
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.0683823
+      value: -0.0019668553
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.12029771
+      value: 2.5033424
+      inSlope: 0.035792395
+      outSlope: 0.035792395
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.14850463
+      value: 2.5040593
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 136
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 1
+    m_RotationOrder: 4
 --- !u!4 &1941533725
 Transform:
   m_ObjectHideFlags: 0

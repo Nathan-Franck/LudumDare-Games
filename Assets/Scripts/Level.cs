@@ -4,6 +4,8 @@ using UnityEngine;
 using System.Linq;
 using System;
 using System.Collections.Specialized;
+using Unity.VisualScripting.Antlr3.Runtime;
+using UnityEngine.XR;
 
 namespace System.Runtime.CompilerServices
 {
@@ -36,8 +38,16 @@ public class Level : MonoBehaviour
     public GameObject carPrefab;
     [Header("State")]
     public List<ActiveCar> activeCars;
-    public List<Transform> parkedCars;
-    public bool solved;
+    public List<Tuple<Transform, Transform>> parkedCars = new List<Tuple<Transform, Transform>>();
+    public enum State
+    {
+        Intro,
+        Interactable,
+        FailedCollision,
+        FailedTimeOut,
+        Solved,
+    };
+    public State state;
     public float timeLeft;
 
 
@@ -52,11 +62,15 @@ public class Level : MonoBehaviour
             for (var j = 0; j < emptySpaces.Length; j++)
             {
                 var emptySpace = emptySpaces[j];
+                if (parkedCars.Any(parked => parked.Item2 == emptySpace.space))
+                {
+                    continue;
+                }
                 var sample = ClosestPointOnPath(emptySpace.space.position);
                 var parkProgress = segmentProgresses[sample.PathIndex] + sample.Progress;
                 if (Mathf.Abs(car.Progress - parkProgress) < game.fitTolerance)
                 {
-                    dockables.Add(new Tuple<Transform, Transform>(car.Transform, emptySpace.space));
+                    dockables.Add(new(car.Transform, emptySpace.space));
                 }
             }
         }
@@ -173,9 +187,12 @@ public class Level : MonoBehaviour
         labelGfx.Update(game.labelSettings);
         tracingGfx.Update(game.traceSettings);
 
+        // Wait until we can see the statuses to become interactable!
+        state = State.Interactable;
+
         // Portray car statuses
         {
-            while (!solved)
+            while (state == State.Interactable || state == State.FailedCollision)
             {
                 labelGfx.Clear();
                 collisionBoundsGfx.boundses.Clear();
@@ -194,21 +211,26 @@ public class Level : MonoBehaviour
                     collisionBoundsGfx.boundses.Add(collisionBounds);
                 }
 
-                for (var dockableID = 0; dockableID < dockables.Count; dockableID++)
+                if (state != State.FailedCollision)
                 {
-                    var dockable = dockables[dockableID];
-                    var dockableBounds = BoundsDictionary.Calculate(dockable.Item1.gameObject);
-                    dockableBounds.Encapsulate(BoundsDictionary.Calculate(dockable.Item2.gameObject));
-                    dockableBounds = dockableBounds.Quantize(game.carLabelSettings.quantization);
-                    var iconBounds = BoundsDictionary.Get(game.carLabelSettings.dockablePrefab);
-                    dockableBounds = new Bounds(dockableBounds.center, dockableBounds.size + 2 * game.boundsSettings.targetPadding * Vector3.one);
-                    var position = new Vector3(dockableBounds.min.x - iconBounds.min.x, dockableBounds.min.y - game.boundsSettings.targetPadding - iconBounds.max.y, 0);
-                    labelGfx.Add(new(new(game.carLabelSettings.dockablePrefab, "DOCKABLE_" + (char)('A' + dockableID)), position));
-                    dockableBoundsGfx.boundses.Add(dockableBounds);
+                    for (var dockableID = 0; dockableID < dockables.Count; dockableID++)
+                    {
+                        var dockable = dockables[dockableID];
+                        var dockableBounds = BoundsDictionary.Calculate(dockable.Item1.gameObject);
+                        dockableBounds.Encapsulate(BoundsDictionary.Calculate(dockable.Item2.gameObject));
+                        dockableBounds = dockableBounds.Quantize(game.carLabelSettings.quantization);
+                        var iconBounds = BoundsDictionary.Get(game.carLabelSettings.dockablePrefab);
+                        dockableBounds = new Bounds(dockableBounds.center, dockableBounds.size + 2 * game.boundsSettings.targetPadding * Vector3.one);
+                        var position = new Vector3(dockableBounds.min.x - iconBounds.min.x, dockableBounds.min.y - game.boundsSettings.targetPadding - iconBounds.max.y, 0);
+                        labelGfx.Add(new(new(game.carLabelSettings.dockablePrefab, "DOCKABLE_" + (char)('A' + dockableID)), position));
+                        dockableBoundsGfx.boundses.Add(dockableBounds);
+                    }
                 }
 
                 labelGfx.Update(game.labelSettings);
-                collisionBoundsGfx.Update(game.boundsSettings with { lineColor = Color.red });
+                collisionBoundsGfx.Update(state == State.FailedCollision
+                    ? game.boundsSettings with { lineColor = Color.red, lineThickness = game.boundsSettings.lineThickness * game.failPulse.Evaluate(Time.time) }
+                    : game.boundsSettings with { lineColor = Color.red });
                 dockableBoundsGfx.Update(game.boundsSettings with { lineColor = Color.green });
 
                 yield return null;
@@ -234,109 +256,173 @@ public class Level : MonoBehaviour
         car.Transform.localRotation = Quaternion.FromToRotation(Vector3.up, LocationOnPath(backProgress) - LocationOnPath(frontProgress)) * carPrefab.transform.localRotation;
     }
 
-    public IEnumerator Timer()
+    public IEnumerator Timer(Game game)
     {
+        timeLeft = timeToComplete;
+        game.timerText.enabled = true;
+        game.timerText.text = $"Time left: {timeLeft:0.00}";
+        yield return new WaitUntil(() => state == State.Interactable);
+        while (state == State.Interactable)
+        {
+            timeLeft -= Time.deltaTime;
+            game.timerText.text = $"Time left: {timeLeft:0.00}";
+            if (timeLeft <= 0)
+            {
+                timeLeft = 0;
+                game.timerText.text = $"Time left: NADA";
+                state = State.FailedTimeOut;
+                StartCoroutine(Flash(game.timerText, 1));
+            }
+            yield return null;
+        }
+    }
 
-        // timeLeft = timeToComplete;
-        // var timeText = 
-        yield return new WaitForSeconds(1);
+    public IEnumerator Flash(TMPro.TextMeshProUGUI text, float time)
+    {
+        var startTime = Time.time;
+        while (Time.time - startTime < time)
+        {
+            text.alpha = Mathf.PingPong(Time.time * 10, 1);
+            yield return null;
+        }
+        text.alpha = 1;
     }
 
     public IEnumerator StartLevel(Game game, int currentLevel)
     {
-        // Cleanup previous state
-        foreach (var car in activeCars)
+        var failing = true;
+        while (failing)
         {
-            Destroy(car.Transform.gameObject);
-        }
-        activeCars.Clear();
-        foreach (var car in parkedCars)
-        {
-            Destroy(car.gameObject);
-        }
-        parkedCars.Clear();
 
-        // Calculate the bounds of the car prefab
-        var carBounds = carPrefab.GetComponents<Renderer>().Select(r => r.bounds)
-            .Concat(carPrefab.GetComponents<SpriteRenderer>().Select(r => r.bounds))
-            .Aggregate((a, b) => { a.Encapsulate(b); return a; });
-        var carFront = carBounds.min.x - carPrefab.transform.position.x;
-        var carBack = carBounds.max.x - carPrefab.transform.position.x;
+            state = State.Intro;
 
-        // Create le cars
-        foreach (var initialCarProgress in InitialCarProgresses())
-        {
-            var carGo = Instantiate(carPrefab, Vector3.zero, Quaternion.identity);
-            carGo.transform.parent = transform;
-            carGo.transform.localPosition = LocationOnPath(initialCarProgress);
-            string label;
+            // Cleanup previous state
+            foreach (var car in activeCars)
             {
-                var labels = game.carLabelSettings.car_names.ToList();
-                foreach (var usedAlready in game.usedLabels)
-                {
-                    labels.Remove(usedAlready);
-                }
-                if (labels.Count == 0)
-                {
-                    labels = new List<string> { "ran_out_of_files.ohno" };
-                }
-                label = labels.Random();
-                game.usedLabels.Add(label);
+                Destroy(car.Transform.gameObject);
             }
-            var car = new ActiveCar(carGo.transform, initialCarProgress, label);
-            UpdateCar(car, initialCarProgress, carFront, carBack);
-            activeCars.Add(car);
-        }
-
-        StartCoroutine(game.ShowMessageToUser($"Level {currentLevel + 1} - {LevelName}"));
-
-        solved = false;
-
-        yield return new WaitForSeconds(0.5f);
-
-        StartCoroutine(LabelCars(game));
-
-        yield return new WaitForSeconds(0.75f);
-
-        StartCoroutine(Timer());
-
-        yield return new WaitForSeconds(0.75f);
-
-        // Level loop
-        while (!solved)
-        {
-            labelGfx.Clear();
-            tracingGfx.traces.Clear();
-            var totalLength = TotalLength();
-
-            // Update all active cars
-            for (int i = 0; i < activeCars.Count; i++)
+            activeCars.Clear();
+            foreach (var parked in parkedCars)
             {
-                var car = activeCars[i];
-                var progress = Mathf.Repeat(car.Progress + Time.deltaTime * carSpeedScale * emptySpaces[i].carSpeed, totalLength);
-                UpdateCar(car, progress, carFront, carBack);
-                activeCars[i] = car with { Progress = progress };
+                Destroy(parked.Item1.gameObject);
+            }
+            parkedCars.Clear();
+
+            // Calculate the bounds of the car prefab
+            var carBounds = carPrefab.GetComponents<Renderer>().Select(r => r.bounds)
+                .Concat(carPrefab.GetComponents<SpriteRenderer>().Select(r => r.bounds))
+                .Aggregate((a, b) => { a.Encapsulate(b); return a; });
+            var carFront = carBounds.min.x - carPrefab.transform.position.x;
+            var carBack = carBounds.max.x - carPrefab.transform.position.x;
+
+            // Create le cars
+            foreach (var initialCarProgress in InitialCarProgresses())
+            {
+                var carGo = Instantiate(carPrefab, Vector3.zero, Quaternion.identity);
+                carGo.transform.parent = transform;
+                carGo.transform.localPosition = LocationOnPath(initialCarProgress);
+                string label;
+                {
+                    var labels = game.carLabelSettings.car_names.ToList();
+                    foreach (var usedAlready in game.usedLabels)
+                    {
+                        labels.Remove(usedAlready);
+                    }
+                    if (labels.Count == 0)
+                    {
+                        labels = new List<string> { "ran_out_of_files.ohno" };
+                    }
+                    label = labels.Random();
+                    game.usedLabels.Add(label);
+                }
+                var car = new ActiveCar(carGo.transform, initialCarProgress, label);
+                UpdateCar(car, initialCarProgress, carFront, carBack);
+                activeCars.Add(car);
             }
 
-            // just wait for any key, then we're solved
-            if (Input.anyKeyDown)
-            {
+            StartCoroutine(game.ShowMessageToUser($"Level {currentLevel + 1} - {LevelName}"));
 
-                var actionResults = GetActionResults(game, SegmentProgresses());
-                solved = true;
-                // Force-park all cars
+            yield return new WaitForSeconds(0.5f);
+
+            StartCoroutine(LabelCars(game));
+
+            yield return new WaitForSeconds(0.75f);
+
+            StartCoroutine(Timer(game));
+
+            yield return new WaitForSeconds(0.75f);
+
+            // Level loop
+            while (state != State.Solved && state != State.FailedCollision && state != State.FailedTimeOut)
+            {
+                var totalLength = TotalLength();
+
+                // Update all active cars
                 for (int i = 0; i < activeCars.Count; i++)
                 {
                     var car = activeCars[i];
-                    car.Transform.position = emptySpaces[i].space.position;
-                    parkedCars.Add(car.Transform);
+                    var progress = Mathf.Repeat(car.Progress + Time.deltaTime * carSpeedScale * emptySpaces[i].carSpeed, totalLength);
+                    UpdateCar(car, progress, carFront, carBack);
+                    activeCars[i] = car with { Progress = progress };
                 }
-                activeCars.Clear();
+
+                // just wait for any key, then we're solved
+                if (state == State.Interactable && Input.GetMouseButtonDown(0))
+                {
+                    var (collisions, docks) = GetActionResults(game, SegmentProgresses());
+
+                    if (collisions.Count > 0)
+                    {
+                        state = State.FailedCollision;
+                        continue;
+                    }
+
+                    for (int i = 0; i < docks.Count; i++)
+                    {
+                        var dock = docks[i];
+                        var car = dock.Item1;
+                        var space = dock.Item2;
+                        car.rotation = space.rotation * carPrefab.transform.localRotation * game.carParkRotation;
+                        StartCoroutine(Dock(game, car, space.TransformPoint(game.carParkOffset)));
+                        parkedCars.Add(new(car, space));
+                        activeCars.Remove(activeCars.First(c => c.Transform == car));
+                    }
+
+                    if (activeCars.Count == 0)
+                    {
+                        state = State.Solved;
+                        continue;
+                    }
+                }
+                yield return null;
             }
-            yield return null;
+            if (state == State.FailedCollision)
+            {
+                yield return StartCoroutine(game.ShowMessageToUser($"!!! OUCH !!!"));
+            }
+            else if (state == State.FailedTimeOut)
+            {
+                yield return StartCoroutine(game.ShowMessageToUser($"!!! TOO SLOW !!!"));
+            }
+            else if (state == State.Solved)
+            {
+                failing = false;
+            }
         }
 
+
         yield return StartCoroutine(game.ShowMessageToUser($"Done Deal!"));
+    }
+
+    public IEnumerator Dock(Game game, Transform car, Vector3 position)
+    {
+        var startTime = Time.time;
+        while (Time.time - startTime < game.dockCurve.keys.Last().time)
+        {
+            var animValue = game.dockCurve.Evaluate(Time.time - startTime);
+            car.position = position + car.rotation * game.dockVector * animValue;
+            yield return null;
+        }
     }
 
     public float[] InitialCarProgresses()

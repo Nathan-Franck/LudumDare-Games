@@ -54,6 +54,8 @@ public class Game : MonoBehaviour
     public TMPro.TextMeshProUGUI timerText;
     public TMPro.TextMeshProUGUI attemptsText;
     public AnimationCurve userMessageAnimationCurve;
+    public AnimationCurve dockCurve;
+    public Vector3 dockVector = new Vector3(0, 1, 0);
     public Font labelFont;
     public enum DebugBehaviour
     {
@@ -65,6 +67,9 @@ public class Game : MonoBehaviour
     public HashSet<string> usedLabels = new HashSet<string>();
 
     public int currentLevel;
+    public Vector3 carParkOffset = new Vector3(0, 0.23f, 0);
+    public Quaternion carParkRotation = Quaternion.Euler(0, 0, 90);
+    public AnimationCurve failPulse;
 
     void Start()
     {
