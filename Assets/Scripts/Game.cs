@@ -52,7 +52,6 @@ public class Game : MonoBehaviour
 
     public TMPro.TextMeshProUGUI userMessageText;
     public TMPro.TextMeshProUGUI timerText;
-    public TMPro.TextMeshProUGUI attemptsText;
     public AnimationCurve userMessageAnimationCurve;
     public AnimationCurve dockCurve;
     public Vector3 dockVector = new Vector3(0, 1, 0);
@@ -76,7 +75,6 @@ public class Game : MonoBehaviour
     {
         userMessageText.enabled = false;
         timerText.enabled = false;
-        attemptsText.enabled = false;
         if (debugBehaviour == DebugBehaviour.PlayFromBeginning)
         {
             StartCoroutine(StartGame());

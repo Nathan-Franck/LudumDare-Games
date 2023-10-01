@@ -6,6 +6,7 @@ using System;
 using System.Collections.Specialized;
 using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine.XR;
+using System.Threading;
 
 namespace System.Runtime.CompilerServices
 {
@@ -39,6 +40,7 @@ public class Level : MonoBehaviour
     [Header("State")]
     public List<ActiveCar> activeCars;
     public List<Tuple<Transform, Transform>> parked = new List<Tuple<Transform, Transform>>();
+    public int missedClicks = 0;
     public enum State
     {
         Intro,
@@ -268,17 +270,19 @@ public class Level : MonoBehaviour
         while (state == State.Interactable)
         {
             timeLeft -= Time.deltaTime;
-            game.timerText.text = $"Time left: {timeLeft:0.00}";
+            game.timerText.text = $"Time left: {timeLeft:0.00}" + misclicksString;
             if (timeLeft <= 0)
             {
                 timeLeft = 0;
-                game.timerText.text = $"Time left: NADA";
+                game.timerText.text = $"Time left: NADA" + misclicksString;
                 state = State.FailedTimeOut;
                 StartCoroutine(Flash(game.timerText, 1));
             }
             yield return null;
         }
     }
+
+    public string misclicksString => missedClicks == 0 ? "" : Enumerable.Range(0, missedClicks).Select(_ => "\nmiss => -1 second").Aggregate((a, b) => a + b);
 
     public IEnumerator Flash(TMPro.TextMeshProUGUI text, float time)
     {
@@ -298,6 +302,7 @@ public class Level : MonoBehaviour
         {
 
             state = State.Intro;
+            missedClicks = 0;
 
             // Cleanup previous state
             foreach (var car in activeCars)
@@ -396,6 +401,7 @@ public class Level : MonoBehaviour
                     if (docks.Count == 0)
                     {
                         timeLeft -= 1;
+                        missedClicks++;
                         StartCoroutine(Flash(game.timerText, .5f));
                     }
 
