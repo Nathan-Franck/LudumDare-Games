@@ -307,6 +307,9 @@ public class Level : MonoBehaviour
         var failing = true;
         while (failing)
         {
+            if (state == State.FailedCollision || state == State.FailedTimeOut)
+                StartCoroutine(game.FadeFromBlack(.25f));
+
             state = State.Intro;
             missedClicks = 0;
             game.timerText.enabled = false;
@@ -428,10 +431,15 @@ public class Level : MonoBehaviour
             if (state == State.FailedCollision)
             {
                 yield return StartCoroutine(game.ShowMessageToUser($">overwrite -y"));
+                yield return StartCoroutine(game.FadeToBlack(1f));
+                yield return new WaitForSeconds(0.5f);
             }
             else if (state == State.FailedTimeOut)
             {
                 yield return StartCoroutine(game.ShowMessageToUser($">deletion complete"));
+                yield return StartCoroutine(game.FadeToBlack(1f));
+                yield return new WaitForSeconds(0.5f);
+
             }
             else if (state == State.Solved)
             {

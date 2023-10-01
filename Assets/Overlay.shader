@@ -49,7 +49,7 @@ Shader "Hidden/Overlay"
                 fixed g = tex2D(_MainTex, uv + _ChromaticAberration * float2(0, 0.002)).g;
                 fixed b = tex2D(_MainTex, uv + _ChromaticAberration * float2(-0.002, 0)).b;
                 fixed4 col = fixed4(r, g, b, 1);
-                col.rgb *= 1 - _ScreenBlackout;
+                col.rgb -= _ScreenBlackout;
                 return col;
             }
             ENDCG

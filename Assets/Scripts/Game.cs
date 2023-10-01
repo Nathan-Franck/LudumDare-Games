@@ -130,7 +130,7 @@ public class Game : MonoBehaviour
         }
     }
 
-    IEnumerator FadeFromBlack(float time = 1.0f)
+    public IEnumerator FadeFromBlack(float time = 1.0f)
     {
         var overlay = camera.GetComponent<Overlay>();
         var startTime = Time.time;
@@ -142,7 +142,7 @@ public class Game : MonoBehaviour
         }
     }
 
-    IEnumerator FadeToBlack(float time = 1.0f)
+    public IEnumerator FadeToBlack(float time = 1.0f)
     {
         var overlay = camera.GetComponent<Overlay>();
         var startTime = Time.time;
