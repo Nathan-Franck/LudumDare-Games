@@ -5789,7 +5789,7 @@ MonoBehaviour:
   dockVector: {x: 0, y: 1, z: 0}
   labelFont: {fileID: 12800000, guid: c28b640affbd1c642b7de554913c76f1, type: 3}
   debugBehaviour: 1
-  debugLevel: 1
+  debugLevel: 2
   currentLevel: 0
   carParkOffset: {x: 0, y: -0.23, z: -0.01}
   carParkEulers: {x: 0, y: 0, z: 0}
@@ -5924,7 +5924,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   LevelName: do you wish to save?
-  timeToComplete: 7
+  timeToComplete: 7.5
   carSpeedScale: 1
   emptySpaces:
   - space: {fileID: 1480604584}
