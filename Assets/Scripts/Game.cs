@@ -151,17 +151,37 @@ public class Game : MonoBehaviour
 
     IEnumerator StartGame()
     {
+        var userWantsAgain = true;
         yield return StartCoroutine(ShowMessageToUser("Lets play a game"));
-        yield return StartCoroutine(FadeFromBlack());
-        while (currentLevel < levels.Length)
+        while (userWantsAgain)
         {
-            yield return StartCoroutine(MovePositionOverTime(camera.transform, levels[currentLevel].transform.position + cameraFocusPoint));
-            var level = levels[currentLevel];
-            yield return StartCoroutine(level.StartLevel(this, currentLevel));
-            currentLevel ++;
+            yield return StartCoroutine(FadeFromBlack());
+            while (currentLevel < levels.Length)
+            {
+                yield return StartCoroutine(MovePositionOverTime(camera.transform, levels[currentLevel].transform.position + cameraFocusPoint));
+                var level = levels[currentLevel];
+                yield return StartCoroutine(level.StartLevel(this, currentLevel));
+                currentLevel++;
+            }
+            timerText.enabled = false;
+            yield return StartCoroutine(FadeToBlack());
+            yield return StartCoroutine(ShowFinalMessageToUser("your Lesson is complete.\nfiles_lost = " + filesDeleted + " " + (filesDeleted == 0 ? "\n\nuntil next time" : "\nretry? (Y/n)")));
+            if (filesDeleted == 0)
+            {
+                // softlock the winner
+                break;
+            }
+            yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Y) || Input.GetKeyDown(KeyCode.N) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.touchCount > 0 || Input.GetMouseButtonDown(0));
+            if (Input.GetKeyDown(KeyCode.N))
+            {
+                yield return StartCoroutine(ShowFinalMessageToUser("c:/soundcloud downloader/bin/Debug>"));
+                userWantsAgain = false;
+            }
+            else if (Input.GetKeyDown(KeyCode.Y) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.touchCount > 0 || Input.GetMouseButtonDown(0))
+            {
+                filesDeleted = 0;
+                currentLevel = 0;
+            }
         }
-        timerText.enabled = false;
-        yield return StartCoroutine(FadeToBlack());
-        yield return StartCoroutine(ShowFinalMessageToUser("your Lesson is complete.\nfiles_lost = " + filesDeleted + " " + (filesDeleted == 0 ? "\n\n until next time" : "")));
     }
 }
