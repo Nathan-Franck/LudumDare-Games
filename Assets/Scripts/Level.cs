@@ -38,6 +38,8 @@ public class Level : MonoBehaviour
     public List<ActiveCar> activeCars;
     public List<Transform> parkedCars;
     public bool solved;
+    public float timeLeft;
+    
 
     public (List<List<Transform>>, List<Tuple<Transform, Transform>>) GetActionResults(Game game, float[] segmentProgresses)
     {
@@ -129,6 +131,8 @@ public class Level : MonoBehaviour
     {
         var segmentProgresses = SegmentProgresses();
 
+        labelGfx.font = game.labelFont;
+
         collisionBoundsGfx.boundses.Clear();
         collisionBoundsGfx.Update(game.boundsSettings);
         dockableBoundsGfx.boundses.Clear();
@@ -143,7 +147,7 @@ public class Level : MonoBehaviour
                 labelGfx.Clear();
                 tracingGfx.traces.Clear();
 
-                var stackHeight = game.carLabelSettings.LabelVerticalCurve.Evaluate(Time.time - startTime);
+                var stackHeight = game.carLabelSettings.LabelVerticalCurve.Evaluate((Time.time - startTime).Quantize(game.animationCurveQuantum));
                 for (int i = 0; i < activeCars.Count; i++)
                 {
                     var car = activeCars[i];
@@ -157,7 +161,7 @@ public class Level : MonoBehaviour
 
                 // Update labels and tracing
                 labelGfx.Update(game.labelSettings);
-                tracingGfx.Update(game.traceSettings with { lineThickness = game.traceSettings.lineThickness * game.carLabelSettings.LineThicknessCurve.Evaluate(Time.time - startTime) });
+                tracingGfx.Update(game.traceSettings with { lineThickness = game.traceSettings.lineThickness * game.carLabelSettings.LineThicknessCurve.Evaluate((Time.time - startTime).Quantize(game.animationCurveQuantum)) });
 
                 yield return null;
             }
@@ -230,6 +234,13 @@ public class Level : MonoBehaviour
         car.Transform.localRotation = Quaternion.FromToRotation(Vector3.up, LocationOnPath(backProgress) - LocationOnPath(frontProgress));
     }
 
+    public IEnumerator Timer() {
+
+        // timeLeft = timeToComplete;
+        // var timeText = 
+        yield return new WaitForSeconds(1);
+    }
+
     public IEnumerator StartLevel(Game game, int currentLevel)
     {
         // Cleanup previous state
@@ -259,7 +270,7 @@ public class Level : MonoBehaviour
             carGo.transform.localPosition = LocationOnPath(initialCarProgress);
             string label;
             {
-                var labels = game.carLabelSettings.strings_diff.ToList();
+                var labels = game.carLabelSettings.car_names.ToList();
                 foreach (var usedAlready in game.usedLabels)
                 {
                     labels.Remove(usedAlready);
@@ -284,7 +295,11 @@ public class Level : MonoBehaviour
 
         StartCoroutine(LabelCars(game));
 
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(0.75f);
+
+        StartCoroutine(Timer());
+
+        yield return new WaitForSeconds(0.75f);
 
         // Level loop
         while (!solved)

@@ -15,6 +15,7 @@ public record LabelSettings
 
 public class LabelGfx
 {
+    public Font font;
     public record LabelID(GameObject Icon, string Target);
     public record Label(LabelID ID, Vector3 Position);
     private List<Label> labels = new List<Label>();
@@ -51,6 +52,8 @@ public class LabelGfx
                 text.transform.localPosition = Vector3.zero + Vector3.right * iconMaxX + Vector3.right * settings.Padding;
                 text.transform.localScale = Vector3.one * settings.textScale;
                 var textMesh = text.AddComponent<TextMesh>();
+                textMesh.GetComponent<MeshRenderer>().material = font.material;
+                textMesh.font = font;
                 textMesh.text = label.ID.Target;
                 textMesh.fontSize = settings.fontSize;
                 textMesh.anchor = TextAnchor.MiddleLeft;

@@ -9,6 +9,11 @@ public static class Ext
         return list[UnityEngine.Random.Range(0, list.Count)];
     }
 
+    public static float Quantize(this float x, float quant)
+    {
+        return Mathf.Round(x / quant) * quant;
+    }
+
     public static Vector3 Quantize(this Vector3 v, float quant)
     {
         return new Vector3(
