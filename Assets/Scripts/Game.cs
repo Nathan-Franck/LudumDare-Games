@@ -53,6 +53,7 @@ public class Game : MonoBehaviour
     public TMPro.TextMeshProUGUI userMessageText;
     public TMPro.TextMeshProUGUI timerText;
     public AnimationCurve userMessageAnimationCurve;
+    public AnimationCurve finalUserMessageAnimationCurve;
     public AnimationCurve dockCurve;
     public Vector3 dockVector = new Vector3(0, 1, 0);
     public Font labelFont;
@@ -70,6 +71,7 @@ public class Game : MonoBehaviour
     public Vector3 carParkEulers = new Vector3(0, 0, 90);
     public AnimationCurve failPulse;
     public Vector3 cameraFocusPoint = new Vector3(0, 0, -10);
+    public int filesDeleted = 0;
 
     void Start()
     {
@@ -91,8 +93,15 @@ public class Game : MonoBehaviour
     {
         userMessageText.enabled = true;
         userMessageText.text = message;
-        yield return StartCoroutine(ScaleAnimation(userMessageText.transform, userMessageAnimationCurve));
+        yield return StartCoroutine(FadeTextAnimation(userMessageText, userMessageAnimationCurve));
         userMessageText.enabled = false;
+    }
+
+    public IEnumerator ShowFinalMessageToUser(string message, float time = 1.0f)
+    {
+        userMessageText.enabled = true;
+        userMessageText.text = message;
+        yield return StartCoroutine(FadeTextAnimation(userMessageText, finalUserMessageAnimationCurve));
     }
 
     IEnumerator MovePositionOverTime(Transform transform, Vector3 position, float time = 1.0f)
@@ -106,25 +115,53 @@ public class Game : MonoBehaviour
         }
     }
 
-    IEnumerator ScaleAnimation(Transform transform, AnimationCurve animationCurve)
+    IEnumerator FadeTextAnimation(TMPro.TextMeshProUGUI text, AnimationCurve animationCurve)
     {
         var startTime = Time.time;
         while (Time.time - startTime < animationCurve.keys[animationCurve.length - 1].time)
         {
-            transform.localScale = Vector3.one * animationCurve.Evaluate((Time.time - startTime).Quantize(animationCurveQuantum));
+            text.alpha = animationCurve.Evaluate(Time.time - startTime);
+            yield return null;
+        }
+    }
+
+    IEnumerator FadeFromBlack(float time = 1.0f)
+    {
+        var overlay = camera.GetComponent<Overlay>();
+        var startTime = Time.time;
+        while (Time.time - startTime < time)
+        {
+            var t = (Time.time - startTime) / time;
+            overlay.ScreenBlackout = 1 - t;
+            yield return null;
+        }
+    }
+
+    IEnumerator FadeToBlack(float time = 1.0f)
+    {
+        var overlay = camera.GetComponent<Overlay>();
+        var startTime = Time.time;
+        while (Time.time - startTime < time)
+        {
+            var t = (Time.time - startTime) / time;
+            overlay.ScreenBlackout = t;
             yield return null;
         }
     }
 
     IEnumerator StartGame()
     {
-        yield return StartCoroutine(ShowMessageToUser("Beat my game, gamer."));
-        while (true)
+        yield return StartCoroutine(ShowMessageToUser("Lets play a game"));
+        yield return StartCoroutine(FadeFromBlack());
+        while (currentLevel < levels.Length)
         {
             yield return StartCoroutine(MovePositionOverTime(camera.transform, levels[currentLevel].transform.position + cameraFocusPoint));
             var level = levels[currentLevel];
             yield return StartCoroutine(level.StartLevel(this, currentLevel));
-            currentLevel = (currentLevel + 1) % levels.Length;
+            currentLevel ++;
         }
+        timerText.enabled = false;
+        yield return StartCoroutine(FadeToBlack());
+        yield return StartCoroutine(ShowFinalMessageToUser("your Lesson is complete.\nfiles_lost = " + filesDeleted + " " + (filesDeleted == 0 ? "\n\n until next time" : "")));
     }
 }

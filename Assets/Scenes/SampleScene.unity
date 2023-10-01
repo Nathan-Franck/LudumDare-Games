@@ -2593,9 +2593,13 @@ MonoBehaviour:
   m_GameObject: {fileID: 519420028}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ea5834855786f4c4fb2637da182b2514, type: 3}
+  m_Script: {fileID: 11500000, guid: a2eb84e2ae3d41b49861830de0a39207, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ScreenBlackout: 1
+  ChromaticAberration: 0.3
+  CRT_Distortion: 0.15
+  shader: {fileID: 4800000, guid: 120bbb4ca3c85d74dbab61979e2de6e6, type: 3}
 --- !u!1 &548771589
 GameObject:
   m_ObjectHideFlags: 0
@@ -6755,13 +6759,8 @@ MonoBehaviour:
   camera: {fileID: 519420031}
   levels:
   - {fileID: 1992180887}
-  - {fileID: 1212898869}
-  - {fileID: 1947524134}
-  - {fileID: 1649452793}
-  - {fileID: 353974635}
   userMessageText: {fileID: 151940513}
   timerText: {fileID: 1507092618}
-  attemptsText: {fileID: 0}
   userMessageAnimationCurve:
     serializedVersion: 2
     m_Curve:
@@ -6775,8 +6774,44 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0.083333336
     - serializedVersion: 3
-      time: 0.2
-      value: 1
+      time: 0.025553193
+      value: 1.000054
+      inSlope: 6.248123
+      outSlope: 6.248123
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.056136392
+      value: -0.01358068
+      inSlope: 1.0706273
+      outSlope: 1.0706273
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.07875857
+      value: 0.9955996
+      inSlope: 9.179173
+      outSlope: 9.179173
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.11772709
+      value: -0.008126736
+      inSlope: 2.3989835
+      outSlope: 2.3989835
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.13832398
+      value: 0.99645233
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -6784,8 +6819,8 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 0.44166666
-      value: 0.9646227
+      time: 0.44569498
+      value: 0.9823534
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -6793,8 +6828,8 @@ MonoBehaviour:
       inWeight: 0.33333334
       outWeight: 0.33333334
     - serializedVersion: 3
-      time: 0.7208333
-      value: 1
+      time: 0.60944414
+      value: 0.9932251
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -6802,8 +6837,32 @@ MonoBehaviour:
       inWeight: 0
       outWeight: 0
     - serializedVersion: 3
-      time: 1
-      value: -0.0023585558
+      time: 1.4804077
+      value: 0.006903529
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  finalUserMessageAnimationCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0.98413837
+      outSlope: 0.98413837
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.09024011
+    - serializedVersion: 3
+      time: 3.5
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -6950,6 +7009,7 @@ MonoBehaviour:
     m_PostInfinity: 1
     m_RotationOrder: 4
   cameraFocusPoint: {x: 0, y: 0, z: -10}
+  filesDeleted: 0
 --- !u!4 &1941533725
 Transform:
   m_ObjectHideFlags: 0

@@ -277,6 +277,7 @@ public class Level : MonoBehaviour
                 game.timerText.text = $"Time left: NADA" + misclicksString;
                 state = State.FailedTimeOut;
                 StartCoroutine(Flash(game.timerText, 1));
+                game.filesDeleted += activeCars.Count;
             }
             yield return null;
         }
@@ -384,6 +385,7 @@ public class Level : MonoBehaviour
                     if (collisions.Count > 0)
                     {
                         state = State.FailedCollision;
+                        game.filesDeleted += collisions.Sum(c => c.Count);
                         continue;
                     }
 
@@ -419,11 +421,11 @@ public class Level : MonoBehaviour
             }
             if (state == State.FailedCollision)
             {
-                yield return StartCoroutine(game.ShowMessageToUser($"!!! OUCH !!!"));
+                yield return StartCoroutine(game.ShowMessageToUser($">overwrite -y"));
             }
             else if (state == State.FailedTimeOut)
             {
-                yield return StartCoroutine(game.ShowMessageToUser($"!!! TOO SLOW !!!"));
+                yield return StartCoroutine(game.ShowMessageToUser($">deletion complete"));
             }
             else if (state == State.Solved)
             {
