@@ -72,9 +72,11 @@ public class Game : MonoBehaviour
     public AnimationCurve failPulse;
     public Vector3 cameraFocusPoint = new Vector3(0, 0, -10);
     public int filesDeleted = 0;
+    public Vector3 initialCameraPosition;
 
     void Start()
     {
+        initialCameraPosition = camera.transform.position;
         userMessageText.enabled = false;
         timerText.enabled = false;
         if (debugBehaviour == DebugBehaviour.PlayFromBeginning)
@@ -181,6 +183,8 @@ public class Game : MonoBehaviour
             {
                 filesDeleted = 0;
                 currentLevel = 0;
+                camera.transform.position = initialCameraPosition;
+                yield return StartCoroutine(ShowMessageToUser("your loss"));
             }
         }
     }
