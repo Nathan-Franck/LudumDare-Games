@@ -2050,13 +2050,13 @@ MonoBehaviour:
   emptySpaces:
   - space: {fileID: 661344557}
     designatedParkTime: 5
-    carSpeed: 4.5
+    carSpeed: 4
   - space: {fileID: 511121779}
     designatedParkTime: 5
     carSpeed: 5
   - space: {fileID: 819176252}
     designatedParkTime: 5
-    carSpeed: 5.5
+    carSpeed: 4.5
   carPath:
   - {x: 0.6596756, y: -1.6245213, z: 0}
   - {x: -1.7277298, y: -1.6593933, z: 0}
@@ -6738,7 +6738,7 @@ MonoBehaviour:
     targetPadding: 0.1
     lineThickness: 0.3
     lineColor: {r: 1, g: 1, b: 1, a: 1}
-  fitTolerance: 0.25
+  fitTolerance: 0.4
   animationCurveQuantum: 0.05
   carLabelSettings:
     revealPrefab: {fileID: 6913021492454550563, guid: d6c5617e96f2388499896e10ee8cfcfd, type: 3}
