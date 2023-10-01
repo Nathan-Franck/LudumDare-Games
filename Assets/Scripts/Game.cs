@@ -75,6 +75,7 @@ public class Game : MonoBehaviour
     public int filesDeleted = 0;
     public Vector3 initialCameraPosition;
     public AudioSource beepSource;
+    public Animator introAnimator;
 
     void Start()
     {
