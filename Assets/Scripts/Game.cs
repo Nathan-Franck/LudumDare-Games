@@ -40,6 +40,7 @@ public class Game : MonoBehaviour
         };
         public AnimationCurve LineThicknessCurve;
         public AnimationCurve LabelVerticalCurve;
+        public float TracesTime => LineThicknessCurve.keys[LineThicknessCurve.length - 1].time;
         public float TotalTime => Mathf.Max(LineThicknessCurve.keys[LineThicknessCurve.length - 1].time, LabelVerticalCurve.keys[LabelVerticalCurve.length - 1].time);
         public Vector3 statusOffset = new Vector3(0.5f, 0.5f, 0);
         public float quantization = 0.5f;
@@ -85,6 +86,8 @@ public class Game : MonoBehaviour
         }
         else if (debugBehaviour == DebugBehaviour.SkipToLevel)
         {
+            var overlay = camera.GetComponent<Overlay>();
+            overlay.ScreenBlackout = 0;
             var level = levels[debugLevel];
             camera.transform.position = level.transform.position + cameraFocusPoint;
             StartCoroutine(level.StartLevel(this, currentLevel));

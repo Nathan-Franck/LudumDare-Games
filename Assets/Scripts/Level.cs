@@ -144,6 +144,35 @@ public class Level : MonoBehaviour
         return new(collisions, dockables);
     }
 
+    public IEnumerator IntroLabelCars(Game game)
+    {
+        var startTime = Time.time;
+        var bottomLeftScreen = Camera.main.ScreenToWorldPoint(new Vector3(100, 100, 10));
+        while (Time.time - startTime < game.carLabelSettings.TotalTime)
+        {
+            labelGfx.Clear();
+            tracingGfx.traces.Clear();
+
+            var stackHeight = game.carLabelSettings.LabelVerticalCurve.Evaluate((Time.time - startTime).Quantize(game.animationCurveQuantum));
+            for (int i = 0; i < activeCars.Count; i++)
+            {
+                var car = activeCars[i];
+                var iconBounds = BoundsDictionary.Get(game.carLabelSettings.revealPrefab);
+                // Label le car!
+                var bounds = labelGfx.Add(new(new(game.carLabelSettings.revealPrefab, car.Label), Vector3.up * stackHeight + bottomLeftScreen + iconBounds.extents + Vector3.one * game.labelSettings.Padding));
+                stackHeight += bounds.size.y + game.labelSettings.Padding + game.traceSettings.targetPadding;
+                // Trace from label to car!
+                tracingGfx.traces.Add(new(car.Transform, bounds));
+            }
+
+            // Update labels and tracing
+            labelGfx.Update(game.labelSettings);
+            tracingGfx.Update(game.traceSettings with { lineThickness = game.traceSettings.lineThickness * game.carLabelSettings.LineThicknessCurve.Evaluate((Time.time - startTime).Quantize(game.animationCurveQuantum)) });
+
+            yield return null;
+        }
+    }
+
     public IEnumerator LabelCars(Game game)
     {
         var segmentProgresses = SegmentProgresses();
@@ -157,31 +186,8 @@ public class Level : MonoBehaviour
 
         // Reveal names of cars
         {
-            var startTime = Time.time;
-            var bottomLeftScreen = Camera.main.ScreenToWorldPoint(new Vector3(0, 0, -game.cameraFocusPoint.z));
-            while (Time.time - startTime < game.carLabelSettings.TotalTime)
-            {
-                labelGfx.Clear();
-                tracingGfx.traces.Clear();
-
-                var stackHeight = game.carLabelSettings.LabelVerticalCurve.Evaluate((Time.time - startTime).Quantize(game.animationCurveQuantum));
-                for (int i = 0; i < activeCars.Count; i++)
-                {
-                    var car = activeCars[i];
-                    var iconBounds = BoundsDictionary.Get(game.carLabelSettings.revealPrefab);
-                    // Label le car!
-                    var bounds = labelGfx.Add(new(new(game.carLabelSettings.revealPrefab, car.Label), Vector3.up * stackHeight + bottomLeftScreen + iconBounds.extents + Vector3.one * game.labelSettings.Padding));
-                    stackHeight += bounds.size.y + game.labelSettings.Padding + game.traceSettings.targetPadding;
-                    // Trace from label to car!
-                    tracingGfx.traces.Add(new(car.Transform, bounds));
-                }
-
-                // Update labels and tracing
-                labelGfx.Update(game.labelSettings);
-                tracingGfx.Update(game.traceSettings with { lineThickness = game.traceSettings.lineThickness * game.carLabelSettings.LineThicknessCurve.Evaluate((Time.time - startTime).Quantize(game.animationCurveQuantum)) });
-
-                yield return null;
-            }
+            StartCoroutine(IntroLabelCars(game));
+            yield return new WaitForSeconds(game.carLabelSettings.TracesTime);
         }
 
         // Hide all
@@ -356,7 +362,7 @@ public class Level : MonoBehaviour
 
             StartCoroutine(LabelCars(game));
 
-            yield return new WaitForSeconds(0.75f);
+            yield return new WaitForSeconds(2f);
 
             StartCoroutine(Timer(game));
 
