@@ -155,7 +155,7 @@ public class Level : MonoBehaviour
         // Reveal names of cars
         {
             var startTime = Time.time;
-            var bottomLeftScreen = Camera.main.ScreenToWorldPoint(new Vector3(0, 0, 0));
+            var bottomLeftScreen = Camera.main.ScreenToWorldPoint(new Vector3(0, 0, -game.cameraFocusPoint.z));
             while (Time.time - startTime < game.carLabelSettings.TotalTime)
             {
                 labelGfx.Clear();
@@ -316,7 +316,12 @@ public class Level : MonoBehaviour
             var carBack = carBounds.max.x - carPrefab.transform.position.x;
 
             // Create le cars
-            foreach (var initialCarProgress in InitialCarProgresses())
+            var initialCarProgresses = InitialCarProgresses();
+            if (game.usedLabels.Count() + initialCarProgresses.Length > game.carLabelSettings.car_names.Count())
+            {
+                game.usedLabels.Clear();
+            }
+            foreach (var initialCarProgress in initialCarProgresses)
             {
                 var carGo = Instantiate(carPrefab, Vector3.zero, Quaternion.identity);
                 carGo.transform.parent = transform;
@@ -327,10 +332,6 @@ public class Level : MonoBehaviour
                     foreach (var usedAlready in game.usedLabels)
                     {
                         labels.Remove(usedAlready);
-                    }
-                    if (labels.Count == 0)
-                    {
-                        labels = new List<string> { "ran_out_of_files.ohno" };
                     }
                     label = labels.Random();
                     game.usedLabels.Add(label);

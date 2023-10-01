@@ -70,6 +70,7 @@ public class Game : MonoBehaviour
     public Vector3 carParkOffset = new Vector3(0, 0.23f, 0);
     public Quaternion carParkRotation = Quaternion.Euler(0, 0, 90);
     public AnimationCurve failPulse;
+    public Vector3 cameraFocusPoint = new Vector3(0, 0, -10);
 
     void Start()
     {
@@ -83,7 +84,7 @@ public class Game : MonoBehaviour
         else if (debugBehaviour == DebugBehaviour.SkipToLevel)
         {
             var level = levels[debugLevel];
-            camera.transform.position = level.transform.position;
+            camera.transform.position = level.transform.position + cameraFocusPoint;
             StartCoroutine(level.StartLevel(this, currentLevel));
         }
     }
@@ -122,7 +123,7 @@ public class Game : MonoBehaviour
         yield return StartCoroutine(ShowMessageToUser("Beat my game, gamer."));
         while (true)
         {
-            yield return StartCoroutine(MovePositionOverTime(camera.transform, levels[currentLevel].transform.position));
+            yield return StartCoroutine(MovePositionOverTime(camera.transform, levels[currentLevel].transform.position + cameraFocusPoint));
             var level = levels[currentLevel];
             yield return StartCoroutine(level.StartLevel(this, currentLevel));
             currentLevel = (currentLevel + 1) % levels.Length;
