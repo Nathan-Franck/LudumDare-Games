@@ -4945,16 +4945,16 @@ MonoBehaviour:
   carSpeedScale: 1
   emptySpaces:
   - space: {fileID: 548771590}
-    designatedParkTime: 15
+    designatedParkTime: 9
     carSpeed: 1
   - space: {fileID: 90868619}
-    designatedParkTime: 15
+    designatedParkTime: 9
     carSpeed: 2
   - space: {fileID: 220832852}
-    designatedParkTime: 15
+    designatedParkTime: 9
     carSpeed: 3
   - space: {fileID: 1135620839}
-    designatedParkTime: 15
+    designatedParkTime: 9
     carSpeed: 4
   carPath:
   - {x: 2.4725742, y: -1.5645924, z: 0}
@@ -5789,7 +5789,7 @@ MonoBehaviour:
   dockVector: {x: 0, y: 1, z: 0}
   labelFont: {fileID: 12800000, guid: c28b640affbd1c642b7de554913c76f1, type: 3}
   debugBehaviour: 1
-  debugLevel: 2
+  debugLevel: 3
   currentLevel: 0
   carParkOffset: {x: 0, y: -0.23, z: -0.01}
   carParkEulers: {x: 0, y: 0, z: 0}
@@ -5876,7 +5876,7 @@ GameObject:
   - component: {fileID: 1947524133}
   - component: {fileID: 1947524134}
   m_Layer: 0
-  m_Name: do you wish to save? (1)
+  m_Name: do you wish to save?
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
