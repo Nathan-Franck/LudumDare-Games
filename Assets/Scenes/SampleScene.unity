@@ -2049,13 +2049,13 @@ MonoBehaviour:
   carSpeedScale: 1
   emptySpaces:
   - space: {fileID: 661344557}
-    designatedParkTime: 5
+    designatedParkTime: 4
     carSpeed: 4
   - space: {fileID: 511121779}
-    designatedParkTime: 5
+    designatedParkTime: 4
     carSpeed: 5
   - space: {fileID: 819176252}
-    designatedParkTime: 5
+    designatedParkTime: 4
     carSpeed: 4.5
   carPath:
   - {x: 0.6596756, y: -1.6245213, z: 0}
@@ -4475,10 +4475,10 @@ MonoBehaviour:
   carSpeedScale: 1
   emptySpaces:
   - space: {fileID: 956859819}
-    designatedParkTime: 5
+    designatedParkTime: 4
     carSpeed: 1
   - space: {fileID: 1405374151}
-    designatedParkTime: 5
+    designatedParkTime: 4
     carSpeed: 3
   carPath:
   - {x: 0.5845394, y: -1.6370368, z: 0}
@@ -5947,16 +5947,16 @@ MonoBehaviour:
   carSpeedScale: 1
   emptySpaces:
   - space: {fileID: 548771590}
-    designatedParkTime: 9
+    designatedParkTime: 8
     carSpeed: 1
   - space: {fileID: 90868619}
-    designatedParkTime: 9
+    designatedParkTime: 8
     carSpeed: 2
   - space: {fileID: 220832852}
-    designatedParkTime: 9
+    designatedParkTime: 8
     carSpeed: 3
   - space: {fileID: 1135620839}
-    designatedParkTime: 9
+    designatedParkTime: 8
     carSpeed: 4
   carPath:
   - {x: 2.4725742, y: -1.5645924, z: 0}
@@ -6983,7 +6983,7 @@ MonoBehaviour:
     m_RotationOrder: 4
   dockVector: {x: 0, y: 1, z: 0}
   labelFont: {fileID: 12800000, guid: c28b640affbd1c642b7de554913c76f1, type: 3}
-  debugBehaviour: 1
+  debugBehaviour: 0
   debugLevel: 4
   currentLevel: 0
   carParkOffset: {x: 0, y: -0.23, z: -0.01}
@@ -7125,16 +7125,16 @@ MonoBehaviour:
   carSpeedScale: 1
   emptySpaces:
   - space: {fileID: 1480604584}
-    designatedParkTime: 6
+    designatedParkTime: 5
     carSpeed: 1
   - space: {fileID: 1009958030}
-    designatedParkTime: 6
+    designatedParkTime: 5
     carSpeed: 1
   - space: {fileID: 346293510}
-    designatedParkTime: 6
+    designatedParkTime: 5
     carSpeed: 1
   - space: {fileID: 1863871520}
-    designatedParkTime: 6
+    designatedParkTime: 5
     carSpeed: 1
   carPath:
   - {x: 1.8266411, y: -1.6146576, z: 0}
@@ -7306,7 +7306,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   LevelName: Fit or Die
-  timeToComplete: 4
+  timeToComplete: 5
   carSpeedScale: 1
   emptySpaces:
   - space: {fileID: 1343567298}

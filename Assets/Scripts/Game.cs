@@ -179,7 +179,7 @@ public class Game : MonoBehaviour
             yield return new WaitUntil(() => Input.GetKeyDown(KeyCode.Y) || Input.GetKeyDown(KeyCode.N) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.touchCount > 0 || Input.GetMouseButtonDown(0));
             if (Input.GetKeyDown(KeyCode.N))
             {
-                yield return StartCoroutine(ShowFinalMessageToUser("c:/soundcloud downloader/bin/Debug>"));
+                yield return StartCoroutine(ShowFinalMessageToUser("c:/easy yt downloader/bin/Debug>"));
                 userWantsAgain = false;
             }
             else if (Input.GetKeyDown(KeyCode.Y) || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.touchCount > 0 || Input.GetMouseButtonDown(0))
