@@ -345,7 +345,7 @@ public class Level : MonoBehaviour
             var carBack = carBounds.max.x - carPrefab.transform.position.x;
 
             // Create le cars
-            var initialCarProgresses = InitialCarProgresses();
+            var initialCarProgresses = InitialCarProgresses(game.fitTolerance);
             if (game.usedLabels.Count() + initialCarProgresses.Length > game.carLabelSettings.car_names.Count())
             {
                 game.usedLabels.Clear();
@@ -479,7 +479,7 @@ public class Level : MonoBehaviour
         }
     }
 
-    public float[] InitialCarProgresses()
+    public float[] InitialCarProgresses(float fitTolerance)
     {
         var carProgresses = new float[emptySpaces.Length];
         var progresses = SegmentProgresses();
@@ -488,7 +488,7 @@ public class Level : MonoBehaviour
             var emptySpace = emptySpaces[i];
             var sample = ClosestPointOnPath(emptySpace.space.position);
             var parkProgress = progresses[sample.PathIndex] + sample.Progress;
-            var carProgress = parkProgress - emptySpace.designatedParkTime * emptySpace.carSpeed * carSpeedScale;
+            var carProgress = parkProgress - fitTolerance - emptySpace.designatedParkTime * emptySpace.carSpeed * carSpeedScale;
             carProgresses[i] = carProgress;
         }
         return carProgresses;
@@ -522,7 +522,7 @@ public class Level : MonoBehaviour
             var closestPoint = ClosestPointOnPath(emptySpaces[i].space.position).Point;
             Gizmos.DrawWireSphere(closestPoint, 0.25f);
         }
-        foreach (var carProgress in InitialCarProgresses())
+        foreach (var carProgress in InitialCarProgresses(0.0f))
         {
             Gizmos.color = Color.blue;
             Gizmos.DrawWireSphere(transform.TransformPoint(LocationOnPath(carProgress)), 0.1f);
