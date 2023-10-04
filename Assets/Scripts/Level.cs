@@ -316,6 +316,8 @@ public class Level : MonoBehaviour
     public IEnumerator StartLevel(Game game, int currentLevel)
     {
         var failing = true;
+
+        // Retry Loop
         while (failing)
         {
             if (state == State.FailedCollision || state == State.FailedTimeOut)
@@ -350,7 +352,6 @@ public class Level : MonoBehaviour
             {
                 game.usedLabels.Clear();
             }
-            
             for (var i = 0; i < initialCarProgresses.Length; i++)
             {
                 var initialCarProgress = initialCarProgresses[i];
@@ -398,7 +399,12 @@ public class Level : MonoBehaviour
                     activeCars[i] = car with { Progress = progress };
                 }
 
-                var validInput = Input.GetMouseButtonDown(0) || Input.touchCount > 0 || Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter);
+                // Check for user input
+                var validInput = Input.GetMouseButtonDown(0)
+                    || Input.touchCount > 0
+                    || Input.GetKeyDown(KeyCode.Space)
+                    || Input.GetKeyDown(KeyCode.Return)
+                    || Input.GetKeyDown(KeyCode.KeypadEnter);
                 if (state == State.Interactable && validInput)
                 {
                     var noDocks = parked.Count == 0;
@@ -453,7 +459,6 @@ public class Level : MonoBehaviour
                 yield return StartCoroutine(game.ShowMessageToUser($">deletion complete"));
                 yield return StartCoroutine(game.FadeToBlack(1f));
                 yield return new WaitForSeconds(0.5f);
-
             }
             else if (state == State.Solved)
             {
