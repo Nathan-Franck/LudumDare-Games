@@ -127,29 +127,12 @@ pub fn deepTypedArrayReferences(t: type, allocator: std.mem.Allocator, data: t) 
             }
             break :blk new_data;
         },
-        .Array => |a| switch (a.child) {
-            else => blk: {
-                var elements = [a.len]a.child;
-                for (data, 0..) |elem, idx| {
-                    elements[idx] = try deepTypedArrayReferences(a.child, allocator, elem);
-                }
-                break :blk elements.items;
-            },
-            f32, f64, i8, i16, i32, u8, u16, u32 => .{
-                .ptr = @intFromPtr(&data),
-                .len = data.len * @sizeOf(a.child),
-                .type = switch (a.child) {
-                    f32 => .Float32Array,
-                    f64 => .Float64Array,
-                    i8 => .Int8Array,
-                    i16 => .Int16Array,
-                    i32 => .Int32Array,
-                    u8 => .Uint8Array,
-                    u16 => .Uint16Array,
-                    u32 => .Uint32Array,
-                    else => unreachable,
-                },
-            },
+        .Array => |a| blk: {
+            var elements: [a.len]a.child = undefined;
+            for (data, 0..) |elem, idx| {
+                elements[idx] = try deepTypedArrayReferences(a.child, allocator, elem);
+            }
+            break :blk elements;
         },
         .Pointer => |p| switch (p.size) {
             else => blk: {
@@ -169,7 +152,7 @@ pub fn deepTypedArrayReferences(t: type, allocator: std.mem.Allocator, data: t) 
                 },
                 f32, f64, i8, i16, i32, u8, u16, u32 => .{
                     .ptr = @intFromPtr(@as(*const p.child, @ptrCast(data))),
-                    .len = data.len * @sizeOf(p.child),
+                    .len = data.len,
                     .type = switch (p.child) {
                         f32 => .Float32Array,
                         f64 => .Float64Array,
@@ -240,29 +223,12 @@ pub fn DeepTypedArrayReferences(t: type) struct { type: type, changed: bool = fa
             else
                 .{ .changed = true, .type = @Type(.{ .Struct = utils.copyWith(s, .{ .decls = &[_]std.builtin.Type.Declaration{}, .fields = fields }) }) };
         },
-        .Array => |a| switch (a.child) {
-            f32, f64, i8, i16, i32, u8, u16, u32 => .{
-                .changed = true,
-                .type = switch (a.child) {
-                    else => unreachable,
-                    f32 => TypedArrayReference(enum { Float32Array }),
-                    f64 => TypedArrayReference(enum { Float64Array }),
-                    i8 => TypedArrayReference(enum { Int8Array }),
-                    i16 => TypedArrayReference(enum { Int16Array }),
-                    i32 => TypedArrayReference(enum { Int32Array }),
-                    u8 => TypedArrayReference(enum { Uint8Array }),
-                    u16 => TypedArrayReference(enum { Uint16Array }),
-                    u32 => TypedArrayReference(enum { Uint32Array }),
-                },
-            },
-
-            else => blk: {
-                const child = DeepTypedArrayReferences(a.child);
-                break :blk if (!child.changed)
-                    .{ .type = t }
-                else
-                    .{ .changed = true, .type = @Type(.{ .Array = .{ .len = a.len, .sentinel = a.sentinel, .child = child.type } }) };
-            },
+        .Array => |a| blk: {
+            const child = DeepTypedArrayReferences(a.child);
+            break :blk if (!child.changed)
+                .{ .type = t }
+            else
+                .{ .changed = true, .type = @Type(.{ .Array = .{ .len = a.len, .sentinel = a.sentinel, .child = child.type } }) };
         },
         .Pointer => |p| switch (p.size) {
             .Many, .Slice => switch (p.child) {

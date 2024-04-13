@@ -18,22 +18,20 @@ export function App() {
     const ctx = canvas.getContext('2d');
     if (!ctx)
       return;
-    console.log("hello");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const animation = allResources.RoyalArcher_FullHD_Attack;
     const frame_time = (Date.now() - startTime) / animation.animation_data.framerate;
     const { data, width, height } = animation.sprite_sheet;
     const clampedData = sliceToArray.Uint8ClampedArray(data);
     const imageData = new ImageData(clampedData, width, height);
-    const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
-    const currentFrameData = sliceToArray.Uint32Array(animation.animation_data.frames[currentFrame]);
-    // ctx.putImageData(imageData,
-    //   0, 0,
-    //   // -currentFrameData[5], -currentFrameData[6], // center-offset
-    //   currentFrameData[0], currentFrameData[1], // sample-offset
-    //   currentFrameData[2], currentFrameData[3], // dimensions
-    // );
-    ctx.putImageData(imageData, -306, -306, 306, 306, 296, 296);
+    const currentFrame = Math.floor(frame_time) % (animation.animation_data.frames.length - 1);
+    const currentFrameData = animation.animation_data.frames[currentFrame];
+    ctx.putImageData(imageData,
+      -currentFrameData[0] - currentFrameData[5], -currentFrameData[1] - currentFrameData[6], // center offset
+      currentFrameData[0], currentFrameData[1], // sample offset
+      currentFrameData[2], currentFrameData[3], // sample dimensions
+    );
+    // ctx.putImageData(imageData, -306, -306, 306, 306, 296, 296);
     console.log(currentFrameData);
   }
 
