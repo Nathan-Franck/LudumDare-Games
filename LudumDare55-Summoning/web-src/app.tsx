@@ -1,7 +1,7 @@
 import { declareStyle } from './declareStyle';
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { sliceToArray, callWasm } from './zigWasmInterface';
-import { ShaderBuilder } from "./shaderBuilder";
+import { ShaderBuilder, Mat4, Vec2, Vec4 } from "./shaderBuilder";
 
 const { classes, encodedStyle } = declareStyle({
 });
@@ -28,55 +28,70 @@ export function App() {
             mode: 'TRIANGLES',
             globals: {
                 meshTriangle: { type: "element" },
-                meshVertexPosition: { type: "attribute", unit: "vec4" },
                 meshVertexUV: { type: "attribute", unit: "vec2" },
-                modelViewMatrix: { type: "uniform", unit: "mat4", count: 1 },
+                perspectiveMatrix: { type: "uniform", unit: "mat4", count: 1 },
                 texture: { type: "uniform", unit: "sampler2D", count: 1 },
+                textureResolution: { type: "uniform", unit: "vec2", count: 1 },
+                sampleRect: { type: "uniform", unit: "vec4", count: 1 },
                 uv: { type: "varying", unit: "vec2" },
-                modelPosition: { type: "attribute", unit: "vec3", instanced: true },
+                spritePosition: { type: "attribute", unit: "vec2", instanced: true },
             },
             vertSource: `
                 precision highp float;
                 void main(void) {
-                    gl_Position = modelViewMatrix * meshVertexPosition  + vec4(modelPosition, 1.0);
+                    gl_Position = perspectiveMatrix * vec4(uv * sampleRect.zw + spritePosition, 0, 1);
                     uv = meshVertexUV;
                 }
             `,
             fragSource: `
                 precision highp float;
                 void main(void) {
-                    gl_FragColor = texture2D(texture, uv);
+                    gl_FragColor = texture2D(texture, (uv * sampleRect.zw + sampleRect.xy) / textureResolution);
                 }
             `,
         });
-        const meshTriangle = ShaderBuilder.createElementBuffer(gl, new Uint16Array([
-            0, 1, 2,
-            0, 2, 3
-        ]));
-        const meshVertexPosition = ShaderBuilder.createBuffer(gl, new Float32Array([
-            0, 0, 0, 0,
-            1, 0, 0, 0,
-            1, 1, 0, 0,
-            0, 1, 0, 0,
-        ]));
-        const meshVertexUV = ShaderBuilder.createBuffer(gl, new Float32Array([
-            0, 0,
-            1, 0,
-            1, 1,
-            0, 1
-        ]));
-        const modelPosition = ShaderBuilder.createBuffer(gl, new Float32Array([
-            0, 0, 0
-        ]));
         const spriteSheet = allResources.RoyalArcher_FullHD_Attack.sprite_sheet;
-        const texture = ShaderBuilder.loadImageData(gl, sliceToArray.Uint8Array(spriteSheet.data), spriteSheet.width, spriteSheet.height);
+        const sprite = {
+            meshTriangle: ShaderBuilder.createElementBuffer(gl, new Uint16Array([
+                0, 1, 2,
+                0, 2, 3
+            ])),
+            meshVertexUV: ShaderBuilder.createBuffer(gl, new Float32Array([
+                0, 0,
+                1, 0,
+                1, 1,
+                0, 1
+            ])),
+        };
+        // Map canvas dimensions to 3D space
+        const world = {
+            perspectiveMatrix: [2 / canvas.width, 0, 0, 0, 0, -2 / canvas.height, 0, 0, 0, 0, 1, 0, -1, 1, 0, 1] as Mat4,
+        };
+        const character = {
+            ...sprite,
+            spritePosition: ShaderBuilder.createBuffer(gl, new Float32Array([
+                0, 0
+            ])),
+            textureResolution: [spriteSheet.width, spriteSheet.height] as Vec2,
+            texture: ShaderBuilder.loadImageData(gl, sliceToArray.Uint8Array(spriteSheet.data), spriteSheet.width, spriteSheet.height),
+            sampleRect: [0, 0, spriteSheet.width, spriteSheet.height] as Vec4,
+        };
+        const background = {
+            ...sprite,
+            spritePosition: ShaderBuilder.createBuffer(gl, new Float32Array([
+                0, 0
+            ])),
+            textureResolution: [allResources.background.width, allResources.background.height] as Vec2,
+            texture: ShaderBuilder.loadImageData(gl, sliceToArray.Uint8Array(allResources.background.data), allResources.background.width, allResources.background.height),
+            sampleRect: [0, 0, allResources.background.width, allResources.background.height] as Vec4,
+        };
         function updateAndRender() {
             if (!gl)
                 return;
 
             {
                 gl.clearColor(0, 0, 0, 1);
-                gl.enable(gl.DEPTH_TEST);
+                // gl.enable(gl.DEPTH_TEST);
                 gl.clear(gl.COLOR_BUFFER_BIT);
                 gl.viewport(0, 0, canvas.width, canvas.height);
                 gl.enable(gl.BLEND);
@@ -87,13 +102,14 @@ export function App() {
             // const { player } = callWasm("update", { time_ms: time, keyboard: { left: false, right: false, up: false, down: false, interact: false }, joystick: { x: 0, y: 0, interact: false } }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
             // const { x, y, animation } = player;
 
+
             ShaderBuilder.renderMaterial(gl, spriteMaterial, {
-                modelPosition: modelPosition,
-                meshTriangle: meshTriangle,
-                meshVertexPosition: meshVertexPosition,
-                meshVertexUV: meshVertexUV,
-                texture: texture,
-                modelViewMatrix: [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+                ...world,
+                ...background,
+            });
+            ShaderBuilder.renderMaterial(gl, spriteMaterial, {
+                ...world,
+                ...character,
             });
         }
         let lastTime = Date.now();
