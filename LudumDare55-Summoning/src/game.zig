@@ -1,12 +1,14 @@
 const std = @import("std");
-const SpriteSheetAnimation = @import("SpriteSheetAnimation.zig");
+const assets = @import("assets.zig");
 
 pub fn getAllResources() !struct {
-    RoyalArcher_FullHD_Attack: SpriteSheetAnimation,
+    background: assets.PngImage,
+    RoyalArcher_FullHD_Attack: assets.SpriteSheetAnimation,
 } {
     const allocator = std.heap.page_allocator;
     return .{
-        .RoyalArcher_FullHD_Attack = try SpriteSheetAnimation.load(allocator, "RoyalArcher_FullHD_Attack"),
+        .background = try assets.PngImage.load(allocator, "background"),
+        .RoyalArcher_FullHD_Attack = try assets.SpriteSheetAnimation.load(allocator, "RoyalArcher_FullHD_Attack"),
     };
 }
 
