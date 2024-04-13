@@ -31,12 +31,27 @@ bun run dev
 #### Saturday
 * Actually implement EaselJS format
 * Timed animations displaying
-* Character controller - up down left right
+* Character controller - up down left right animations and x,y movement - work for controller and keyboard
 #### Sunday
 * Machines break down
-* Character interaction with machines, play the interaction animation
-* Summoning animation
-* Stage win/lose/level-up
+* Character interaction with machines, A button, space bar,  play the interaction animation, machine is fixed (new graphic)
+* Summoning animation (win) -> next stage reset
+* Losing animation - text says "TOO BROKEN" -> current stage reset
+* Win -> pause -> text says "SUMMONING COMPLETE"
 #### Stretch Goals
 * Obstacles - goo, electricity, ??? Something to slow you down while trying to get to the broken machine
 * Main Menu, menu transitions
+
+### Oscar
+* Background
+* Summoning Chamber progess animation
+* Summoning Chamber win animation
+* Summoning Chamber fail animation
+* Ghost (4 directions, idle animations, fixing animation (just one direction, we'll flip in runtime))
+* Victory body animation
+* Machine (4x) working idle animation
+* Machine broken (animation?)
+#### Stretch Goals
+* Machine breakdown effect
+* Fix effect
+* Source Music and Audio
