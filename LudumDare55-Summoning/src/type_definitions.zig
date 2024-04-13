@@ -1,5 +1,5 @@
 const std = @import("std");
-const utils = @import("./nodeUtils.zig");
+const utils = @import("./utils.zig");
 
 pub inline fn typescriptTypeOf(comptime from_type: anytype, comptime options: struct { first: bool = false }) []const u8 {
     return comptime switch (@typeInfo(from_type)) {
@@ -122,7 +122,6 @@ pub fn deepTypedArrayReferences(t: type, allocator: std.mem.Allocator, data: t) 
         .Struct => |s| blk: {
             var new_data: DeepTypedArrayReferences(t).type = undefined;
             inline for (s.fields) |field| {
-                @import("wasm_entry.zig").dumpDebugLog(field.name);
                 const result = try deepTypedArrayReferences(field.type, allocator, @field(data, field.name));
                 @field(new_data, field.name) = result;
             }
@@ -163,7 +162,6 @@ pub fn deepTypedArrayReferences(t: type, allocator: std.mem.Allocator, data: t) 
             .Many, .Slice => switch (p.child) {
                 else => blk: {
                     var elements = std.ArrayList(DeepTypedArrayReferences(p.child).type).init(allocator);
-                    @import("wasm_entry.zig").dumpDebugLog(try std.fmt.allocPrint(allocator, "{d}", .{data.len}));
                     for (data) |elem| {
                         try elements.append(try deepTypedArrayReferences(p.child, allocator, elem));
                     }
@@ -240,7 +238,7 @@ pub fn DeepTypedArrayReferences(t: type) struct { type: type, changed: bool = fa
             break :blk if (!changed)
                 .{ .type = t }
             else
-                .{ .changed = true, .type = @Type(.{ .Struct = utils.copyWith(s, .{ .fields = fields }) }) };
+                .{ .changed = true, .type = @Type(.{ .Struct = utils.copyWith(s, .{ .decls = &[_]std.builtin.Type.Declaration{}, .fields = fields }) }) };
         },
         .Array => |a| switch (a.child) {
             f32, f64, i8, i16, i32, u8, u16, u32 => .{
@@ -302,17 +300,6 @@ pub fn DeepTypedArrayReferences(t: type) struct { type: type, changed: bool = fa
 }
 
 test "DeepTypedArrayReferences" {
-    // {
-    //     const actual = DeepTypedArrayReferences([]f32).type;
-    //     const expected = TypedArrayReference(enum { Float32Array });
-    //     try std.testing.expect(actual == expected);
-    // }
-
-    // { // Struct
-    //     const t = DeepTypedArrayReferences(struct { a: []f32, b: []const u8 }).type;
-    //     _ = t{ .a = .{ .type = .Float32Array, .ptr = 0, .len = 0 }, .b = "Hello World!" };
-    // }
-
     { // Slice
         const t = DeepTypedArrayReferences(struct { a: []const []f32 }).type;
         _ = t{ .a = &.{.{ .type = .Float32Array, .ptr = 0, .len = 0 }} };
@@ -343,39 +330,4 @@ test "DeepTypedArrayReferences" {
         const transfromed = DeepTypedArrayReferences(original).type;
         try std.testing.expect(original == transfromed);
     }
-}
-
-// test "deepTypedArrayReferences" {
-//     const allocator = std.heap.page_allocator;
-//     const TheType = struct { a: []const f32, b: []const u8 };
-//     const data: TheType = .{ .a = &.{ 1.0, 2.0, 3.0 }, .b = "Hello World!" };
-//     const actual = deepTypedArrayReferences(TheType, allocator, data);
-//     try std.testing.expect(actual.a.len == 12);
-//     try std.testing.expect(std.mem.eql(u8, actual.b, "Hello World!"));
-//     try std.testing.expect(std.mem.eql(u8, actual.a.type, .Float32Array));
-// }
-
-test "DeepTypedArrayReferences Mesh type conversion" {
-    const Mesh = @import("./subdiv.zig").Mesh;
-    {
-        const actual = DeepTypedArrayReferences(Mesh).type;
-        _ = actual{ .points = &.{}, .quads = &.{.{ .type = .Uint32Array, .ptr = 0, .len = 0 }} };
-    }
-}
-
-pub fn main() !void {
-    const interface = @import("./wasmInterface.zig").interface;
-    const allocator = std.heap.page_allocator;
-    try build_typescript_type(allocator, interface, "src", "../gen/wasmInterface.d.ts");
-}
-
-pub fn build_typescript_type(allocator: std.mem.Allocator, interface: anytype, folder_path: []const u8, file_name: []const u8) !void {
-    const typeInfo = comptime typescriptTypeOf(interface, .{ .first = true });
-    const contents = "export type WasmInterface = " ++ typeInfo;
-    const file_path = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ folder_path, file_name });
-    std.fs.cwd().makeDir(folder_path) catch {};
-    std.fs.cwd().deleteFile(file_path) catch {};
-    const file = try std.fs.cwd().createFile(file_path, .{});
-    try file.writeAll(contents);
-    std.debug.print("Wrote file to {s}\n", .{file_path});
 }

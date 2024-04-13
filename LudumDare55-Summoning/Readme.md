@@ -18,9 +18,15 @@ zig build wasm
 bun run dev
 ```
 > You should be able to ctrl+click the link to open up the URL to the game!
+
 ![alt text](image.png)
 
-# Design
+# Architecture
+
+* Zig in the backend running the game state machine, passes concrete data about the current state of the game to the front-end to display.
+* React frontend reads in state data and displays to user, passes back input events from the user to the backend game state machine to update.
+
+# Game Design
 * 4 Machines are working on a summoning
 * Machines break down and you have to fix them
 * If too many machines break down then the stage resets (4 stages of increasing difficulty)
@@ -43,7 +49,7 @@ bun run dev
 * Main Menu, menu transitions
 
 ### Oscar
-* Background
+* Background (1080p 16:9)
 * Summoning Chamber progess animation
 * Summoning Chamber win animation
 * Summoning Chamber fail animation
