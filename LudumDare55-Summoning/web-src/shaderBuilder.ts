@@ -27,7 +27,7 @@ export type AllowedKeys<Base, Condition> =
 
 
 export type GLSLUnit = "float" | "vec2" | "vec3" | "vec4";
-export type GLSLUniformUnit = "float" | "vec2" | "vec3" | "vec4" | "sampler2D";
+export type GLSLUniformUnit = "float" | "vec2" | "vec3" | "vec4" | "sampler2D" | "mat4";
 export type Varying = {
 	readonly type: "varying",
 	readonly unit: GLSLUnit,
@@ -50,6 +50,7 @@ export const unitToStride = {
 	vec2: 2,
 	vec3: 3,
 	vec4: 4,
+    mat4: 16,
 } as const;
 export type Texture = {
 	texture: WebGLTexture,
@@ -74,11 +75,13 @@ export type Binds<T> =
 	& { readonly [key in AllowedKeys<T, { type: "uniform", unit: "vec2", count: 1 }>]: Vec2 }
 	& { readonly [key in AllowedKeys<T, { type: "uniform", unit: "vec3", count: 1 }>]: Vec3 }
 	& { readonly [key in AllowedKeys<T, { type: "uniform", unit: "vec4", count: 1 }>]: Vec4 }
+    & { readonly [key in AllowedKeys<T, { type: "uniform", unit: "mat4", count: 1 }>]: Mat4 }
 	& { readonly [key in AllowedKeys<T, { type: "uniform", unit: "sampler2D", count: 1 }>]: Texture }
 	& { readonly [key in AllowedKeys<T, { type: "uniform", unit: "float", count: UniformSizes }>]: readonly number[] }
 	& { readonly [key in AllowedKeys<T, { type: "uniform", unit: "vec2", count: UniformSizes }>]: readonly Vec2[] }
 	& { readonly [key in AllowedKeys<T, { type: "uniform", unit: "vec3", count: UniformSizes }>]: readonly Vec3[] }
 	& { readonly [key in AllowedKeys<T, { type: "uniform", unit: "vec4", count: UniformSizes }>]: readonly Vec4[] }
+    & { readonly [key in AllowedKeys<T, { type: "uniform", unit: "mat4", count: UniformSizes }>]: readonly Mat4[] }
 	& { readonly [key in AllowedKeys<T, { type: "uniform", unit: "sampler2D", count: UniformSizes }>]: readonly Texture[] }
 	& { readonly [key in AllowedKeys<T, Attribute>]: SizedBuffer }
 	& { readonly [key in AllowedKeys<T, Element>]: ElementBuffer }
@@ -172,6 +175,7 @@ export namespace ShaderBuilder {
 			gl.compileShader(shader);
 			gl.attachShader(program, shader);
 			if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                console.log(source);
 				const splitInfo = gl.getShaderInfoLog(shader)?.split("ERROR:");
 				if (splitInfo != null) {
 					const errors = splitInfo.slice(1, splitInfo?.length);
@@ -193,6 +197,25 @@ export namespace ShaderBuilder {
 			vertSource,
 		} as const;
 	}
+
+    export function loadImageData(gl: WebGL2RenderingContext, data: Uint8Array, width: number, height: number) {
+        const texture = gl.createTexture();
+        if (texture == null) {
+            throw new Error("Texture is null, this is not expected!");
+        }
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        return {
+            texture,
+            width,
+            height,
+        };
+    }
 
 	export async function loadTexture(gl: WebGL2RenderingContext, url: string) {
 		return await new Promise<Texture>((resolve) => {
@@ -228,25 +251,6 @@ export namespace ShaderBuilder {
 			image.src = url;
 		});
 	}
-
-    export function loadImageData(gl: WebGL2RenderingContext, data: Uint8Array, width: number, height: number) {
-        const texture = gl.createTexture();
-        if (texture == null) {
-            throw new Error("Texture is null, this is not expected!");
-        }
-        gl.bindTexture(gl.TEXTURE_2D, texture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.generateMipmap(gl.TEXTURE_2D);
-        return {
-            texture,
-            width,
-            height,
-        };
-    }
 
 	export function createElementBuffer(gl: WebGL2RenderingContext, data: Uint16Array | Uint32Array): ElementBuffer {
 		const buffer = gl.createBuffer();
@@ -307,6 +311,9 @@ export namespace ShaderBuilder {
 						case "vec4":
 							gl.uniform4fv(uniformLocation, global.count > 1 ? (data as Vec4[]).flat() : [...data as Vec4]);
 							break;
+                        case "mat4":
+                            gl.uniformMatrix4fv(uniformLocation, false, global.count > 1 ? (data as Mat4[]).flat() : [...data as Mat4]);
+                            break;
 					}
 					return textureIndex;
 				}, 0);
@@ -321,6 +328,10 @@ export namespace ShaderBuilder {
 					const data = (binds as any)[key] as SizedBuffer;
 					gl.bindBuffer(gl.ARRAY_BUFFER, data.buffer);
 					const attributeLocation = gl.getAttribLocation(material.program, key as string);
+                    if (attributeLocation == -1) {
+                        console.error(`Attribute ${key} not found in shader`);
+                        return;
+                    }
 					const dataType = global.unit;
 					gl.vertexAttribPointer(attributeLocation, unitToStride[dataType], gl.FLOAT, false, 0, 0);
 					gl.enableVertexAttribArray(attributeLocation);
