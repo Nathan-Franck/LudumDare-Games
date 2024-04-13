@@ -8,6 +8,27 @@ const { classes, encodedStyle } = declareStyle({
 const allResources = callWasm("getAllResources") as Exclude<ReturnType<typeof callWasm<"getAllResources">>, { "error": any }>;
 const startTime = Date.now();
 
+// Create a vertex shader
+const vertexShaderSource = `
+      attribute vec4 aVertexPosition;
+      attribute vec2 aTextureCoord;
+      uniform mat4 uModelViewMatrix;
+      varying highp vec2 vTextureCoord;
+
+      void main() {
+        gl_Position = uModelViewMatrix * aVertexPosition;
+        vTextureCoord = aTextureCoord;
+      }
+    `;
+// Create a fragment shader
+const fragmentShaderSource = `
+      uniform sampler2D uSampler;
+      varying highp vec2 vTextureCoord;
+
+      void main() {
+        gl_FragColor = texture2D(uSampler, vTextureCoord);
+      }
+    `;
 
 export function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -67,20 +88,21 @@ export function App() {
     const positionBuffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     const positions = [
-      0, 0,
-      0, 0.5,
-      0.7, 0,
+      100, 100,
+      100, 500,
+      500, 100,
     ];
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+    // uvs
+    const textureCoordBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
+    const textureCoordinates = [
+      0.0, 0.0,
+      1.0, 0.0,
+      0.0, 1.0,
+    ];
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates), gl.STATIC_DRAW);
 
-    // Create a vertex shader
-    const vertexShaderSource = `
-      attribute vec4 aVertexPosition;
-
-      void main() {
-        gl_Position = aVertexPosition;
-      }
-    `;
     const vertexShader = gl.createShader(gl.VERTEX_SHADER);
     if (!vertexShader)
       return;
@@ -91,12 +113,6 @@ export function App() {
       return;
     }
 
-    // Create a fragment shader
-    const fragmentShaderSource = `
-      void main() {
-        gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-      }
-    `;
     const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
     if (!fragmentShader)
       return;
@@ -122,14 +138,40 @@ export function App() {
 
     gl.useProgram(shaderProgram);
 
+    const modelViewMatrix = gl.getUniformLocation(shaderProgram, 'uModelViewMatrix');
+    gl.uniformMatrix4fv(modelViewMatrix, false, new Float32Array([
+      2 / 1920, 0, 0, 0,
+      0, -2 / 1080, 0, 0,
+      0, 0, 1, 0,
+      -1, 1, 0, 1,
+    ]));
+
     // Get the attribute location
     const positionAttributeLocation = gl.getAttribLocation(shaderProgram, 'aVertexPosition');
     gl.enableVertexAttribArray(positionAttributeLocation);
+    gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
     gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+    const textureCoordAttributeLocation = gl.getAttribLocation(shaderProgram, 'aTextureCoord');
+    gl.enableVertexAttribArray(textureCoordAttributeLocation);
+    gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
+    gl.vertexAttribPointer(textureCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0);
+
+    const { data, width, height } = allResources.background;
+    const texture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, sliceToArray.Uint8Array(data));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+    gl.activeTexture(gl.TEXTURE0);
+
+
 
     // Draw
     gl.drawArrays(gl.TRIANGLES, 0, 3);
-    
+
   }
 
   useEffect(() => {
