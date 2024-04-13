@@ -4,6 +4,17 @@ import { sliceToArray, callWasm } from './zigWasmInterface';
 import { ShaderBuilder, Mat4, Vec2, Vec4 } from "./shaderBuilder";
 
 const { classes, encodedStyle } = declareStyle({
+    frameRate: {
+        fontFamily: 'monospace',
+    },
+    canvas: {
+        width: "100%",
+        height: "100%",
+        position: "absolute",
+        left: 0,
+        top: 0,
+        zIndex: 0,
+    },
 });
 
 const allResources = callWasm("getAllResources") as Exclude<ReturnType<typeof callWasm<"getAllResources">>, { "error": any }>;
@@ -39,7 +50,7 @@ export function App() {
             vertSource: `
                 precision highp float;
                 void main(void) {
-                    gl_Position = perspectiveMatrix * vec4(uv * sampleRect.zw + spritePosition, 0, 1);
+                    gl_Position = perspectiveMatrix * vec4(meshVertexUV * sampleRect.zw + spritePosition, 0, 1);
                     uv = meshVertexUV;
                 }
             `,
@@ -50,7 +61,7 @@ export function App() {
                 }
             `,
         });
-        const spriteSheet = allResources.RoyalArcher_FullHD_Attack.sprite_sheet;
+        const animation = allResources.RoyalArcher_FullHD_Attack;
         const sprite = {
             meshTriangle: ShaderBuilder.createElementBuffer(gl, new Uint16Array([
                 0, 1, 2,
@@ -63,26 +74,30 @@ export function App() {
                 0, 1
             ])),
         };
-        // Map canvas dimensions to 3D space
+        // Convert 1080p to window height
+        const renderScale = window.innerHeight / 1080;
         const world = {
-            perspectiveMatrix: [2 / canvas.width, 0, 0, 0, 0, -2 / canvas.height, 0, 0, 0, 0, 1, 0, -1, 1, 0, 1] as Mat4,
+            perspectiveMatrix: [
+                2 / canvas.width * renderScale, 0, 0, 0,
+                0, -2 / canvas.height * renderScale, 0, 0,
+                0, 0, 1, 0,
+                -1, 1, 0, 1
+            ] as Mat4,
         };
+        const spriteSheet = animation.sprite_sheet;
         const character = {
             ...sprite,
-            spritePosition: ShaderBuilder.createBuffer(gl, new Float32Array([
-                0, 0
-            ])),
-            textureResolution: [spriteSheet.width, spriteSheet.height] as Vec2,
             texture: ShaderBuilder.loadImageData(gl, sliceToArray.Uint8Array(spriteSheet.data), spriteSheet.width, spriteSheet.height),
-            sampleRect: [0, 0, spriteSheet.width, spriteSheet.height] as Vec4,
+            textureResolution: [spriteSheet.width, spriteSheet.height] as Vec2,
+            // sampleRect: [0, 0, spriteSheet.width, spriteSheet.height] as Vec4,
         };
         const background = {
             ...sprite,
             spritePosition: ShaderBuilder.createBuffer(gl, new Float32Array([
                 0, 0
             ])),
-            textureResolution: [allResources.background.width, allResources.background.height] as Vec2,
             texture: ShaderBuilder.loadImageData(gl, sliceToArray.Uint8Array(allResources.background.data), allResources.background.width, allResources.background.height),
+            textureResolution: [allResources.background.width, allResources.background.height] as Vec2,
             sampleRect: [0, 0, allResources.background.width, allResources.background.height] as Vec4,
         };
         function updateAndRender() {
@@ -102,6 +117,9 @@ export function App() {
             // const { player } = callWasm("update", { time_ms: time, keyboard: { left: false, right: false, up: false, down: false, interact: false }, joystick: { x: 0, y: 0, interact: false } }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
             // const { x, y, animation } = player;
 
+            const frame_time = (Date.now() - startTime) / animation.animation_data.framerate;
+            const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
+            const currentFrameData = animation.animation_data.frames[currentFrame];
 
             ShaderBuilder.renderMaterial(gl, spriteMaterial, {
                 ...world,
@@ -110,6 +128,10 @@ export function App() {
             ShaderBuilder.renderMaterial(gl, spriteMaterial, {
                 ...world,
                 ...character,
+                spritePosition: ShaderBuilder.createBuffer(gl, new Float32Array([
+                    0 - currentFrameData[5], 0 - currentFrameData[6]
+                ])),
+                sampleRect: [currentFrameData[0], currentFrameData[1], currentFrameData[2], currentFrameData[3]] as Vec4,
             });
         }
         let lastTime = Date.now();
@@ -132,7 +154,7 @@ export function App() {
         <>
             <div class={classes.frameRate}>Frame Rate: {framerate}</div>
             <style>{encodedStyle}</style>
-            <canvas ref={canvasRef} id="canvas" width="540" height="480"></canvas>
+            <canvas ref={canvasRef} class={classes.canvas} id="canvas" width={window.innerWidth} height={window.innerHeight}></canvas>
         </>
     )
 }

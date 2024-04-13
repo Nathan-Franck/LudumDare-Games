@@ -12,6 +12,12 @@ pub fn getAllResources() !struct {
     };
 }
 
+const State = struct {
+    player: struct { x: f32, y: f32 },
+};
+
+var state = {};
+
 pub fn update(inputs: struct {
     time_ms: u32,
     keyboard: struct {
@@ -26,12 +32,7 @@ pub fn update(inputs: struct {
         y: f32,
         interact: bool,
     },
-}) !struct {
-    player: struct { x: f32, y: f32, animation: struct {
-        name: []const u8,
-        frame: u32,
-    } },
-} {
+}) !struct {} {
     _ = inputs;
     unreachable;
 }
