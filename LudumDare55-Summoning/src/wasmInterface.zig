@@ -31,7 +31,7 @@ pub const interface = struct {
         json: []const u8,
     };
     pub fn getAllResources() !struct {
-        smile_test: struct { data: []const u8, width: usize, height: usize },
+        smile_test: struct { image_data: []const u8, width: usize, height: usize },
     } {
         const allocator = std.heap.page_allocator;
 
@@ -62,6 +62,7 @@ pub const interface = struct {
         //     .layout = .auto,
         //     .fields = fields,
         // } });
+        const easel_js = @import("/easel_js_animator.zig");
         const Png = @import("./zigimg/src/formats/png.zig");
 
         const png_data = @embedFile("content/RoyalArcher_FullHD_Attack.png");
@@ -70,12 +71,13 @@ pub const interface = struct {
         const image = try Png.load(&stream_source, allocator, default_options.get());
         return .{
             .smile_test = .{
-                .data = switch (image.pixels) {
+                .image_data = switch (image.pixels) {
                     .rgba32 => |rgba| std.mem.sliceAsBytes(rgba),
                     else => @panic("handy axiom"),
                 },
                 .width = image.width,
                 .height = image.height,
+                .animation_data = easel_js.loadEaselJSData(allocator, "RoyalArcher", "FullHD_Attack"),
             },
         };
     }
