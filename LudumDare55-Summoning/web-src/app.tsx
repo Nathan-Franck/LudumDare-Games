@@ -25,8 +25,7 @@ export function App() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
     const [framerate, setFramerate] = useState(0);
-    const [keyboard, setKeyboard] = useState({ left: false, right: false, up: false, down: false, interact: false });
-    const [joystick, setJoystick] = useState({ x: 0, y: 0, interact: false });
+    let keyboard = { left: false, right: false, up: false, down: false, interact: false };
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
 
     useEffect(() => {
@@ -49,7 +48,7 @@ export function App() {
         const keyHandler = (activate: boolean) => (event: KeyboardEvent) => {
             const key = eventKeyToKey[event.key as keyof typeof eventKeyToKey];
             if (key) {
-                setKeyboard(keyboard => ({ ...keyboard, [key]: activate }));
+                keyboard = { ...keyboard, [key]: activate };
             }
         };
         const keyHandlers = { down: keyHandler(true), up: keyHandler(false) };
@@ -58,28 +57,6 @@ export function App() {
         return () => {
             window.removeEventListener('keydown', keyHandlers.down);
             window.removeEventListener('keyup', keyHandlers.up);
-        };
-    }, []);
-    useEffect(() => {
-        const gamepadHandler = () => {
-            const gamepads = navigator.getGamepads();
-            for (let i = 0; i < gamepads.length; i++) {
-                const gamepad = gamepads[i];
-                if (gamepad) {
-                    setJoystick({
-                        x: gamepad.axes[0],
-                        y: gamepad.axes[1],
-                        interact: gamepad.buttons[0].pressed,
-                    });
-                    break;
-                }
-            }
-        };
-        window.addEventListener('gamepadconnected', gamepadHandler);
-        window.addEventListener('gamepaddisconnected', gamepadHandler);
-        return () => {
-            window.removeEventListener('gamepadconnected', gamepadHandler);
-            window.removeEventListener('gamepaddisconnected', gamepadHandler);
         };
     }, []);
 
@@ -131,16 +108,16 @@ export function App() {
             ])),
         };
         // Convert 1080p to window height
-        const renderScale = window.innerHeight / 1080;
+        const renderScale = windowSize.height / 1080;
         const world = {
             perspectiveMatrix: [
-                2 / canvas.width * renderScale, 0, 0, 0,
-                0, -2 / canvas.height * renderScale, 0, 0,
+                2 / windowSize.width * renderScale, 0, 0, 0,
+                0, -2 / windowSize.height * renderScale, 0, 0,
                 0, 0, 1, 0,
                 -1, 1, 0, 1
             ] as Mat4,
         };
-        const animation = allResources.RoyalArcher_FullHD_Attack;
+        const animation = allResources.SummoningChamber_FullHD_ChamberProgressIncrease;
         const spriteSheet = animation.sprite_sheet;
         const character = {
             ...sprite,
@@ -168,13 +145,26 @@ export function App() {
             if (!gl)
                 return;
 
+            let joystick = { x: 0, y: 0, interact: false };
+            const gamepads = navigator.getGamepads();
+            for (let i = 0; i < gamepads.length; i++) {
+                const gamepad = gamepads[i];
+                if (gamepad) {
+                    joystick = {
+                        x: gamepad.axes[0],
+                        y: gamepad.axes[1],
+                        interact: gamepad.buttons[0].pressed,
+                    };
+                    break;
+                }
+            }
+
             const time = Date.now() - startTime;
-            // const { player } = callWasm("update", {
-            //     time_ms: time,
-            //     keyboard,
-            //     joystick,
-            // }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
-            // const { x, y, animation } = player;
+            const { player } = callWasm("update", {
+                time_ms: time,
+                keyboard,
+                joystick,
+            }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
 
             const frame_time = (Date.now() - startTime) / animation.animation_data.framerate;
             const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
@@ -188,7 +178,7 @@ export function App() {
                 ...world,
                 ...character,
                 spritePosition: ShaderBuilder.createBuffer(gl, new Float32Array([
-                    0 - currentFrameData[5], 0 - currentFrameData[6]
+                    player.x - currentFrameData[5], player.y - currentFrameData[6]
                 ])),
                 sampleRect: [currentFrameData[0], currentFrameData[1], currentFrameData[2], currentFrameData[3]] as Vec4,
             });
@@ -212,7 +202,7 @@ export function App() {
         return () => {
             quit = true;
         };
-    }, [canvasRef]);
+    }, [canvasRef, windowSize]);
 
     return (
         <>

@@ -159,13 +159,13 @@ export namespace ShaderBuilder {
 			throw new Error("Vertex/Fragment shader not properly initialized");
 		}
 		const vertSource = `
-				${toVertText(environment.globals)}
-				${environment.vertSource}
-			`;
+			${toVertText(environment.globals)}
+			${environment.vertSource}
+		`;
 		const fragSource = `
-				${toFragText(environment.globals)}
-				${environment.fragSource}
-			`;
+			${toFragText(environment.globals)}
+			${environment.fragSource}
+		`;
 		[vertSource, fragSource].forEach((source, index) => {
 			const shader = gl.createShader(index == 0 ? gl.VERTEX_SHADER : gl.FRAGMENT_SHADER);
 			if (shader == null) {
