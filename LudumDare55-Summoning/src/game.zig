@@ -7,6 +7,7 @@ pub fn getAllResources() !struct {
         machine: assets.PngImage,
         chamber_increase: assets.SpriteSheetAnimation,
         ghost_idle: assets.SpriteSheetAnimation,
+        ghost_fixing: assets.SpriteSheetAnimation,
         archer: assets.SpriteSheetAnimation,
     },
     config: Config,
@@ -19,6 +20,7 @@ pub fn getAllResources() !struct {
             .machine = try assets.PngImage.load(allocator, "Summoning_0001_Machine"),
             .chamber_increase = try assets.SpriteSheetAnimation.load(allocator, "SummoningChamber_FullHD_ChamberProgressIncrease"),
             .ghost_idle = try assets.SpriteSheetAnimation.load(allocator, "Ghost_FullHD_Idle"),
+            .ghost_fixing = try assets.SpriteSheetAnimation.load(allocator, "Ghost_FullHD_FixAnimation"),
             .archer = try assets.SpriteSheetAnimation.load(allocator, "RoyalArcher_FullHD_Attack"),
         },
     };

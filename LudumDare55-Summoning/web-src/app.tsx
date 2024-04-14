@@ -169,7 +169,10 @@ export function App() {
         };
         const graphics = allResources.graphics;
         const character = loadAnimation(graphics.archer);
-        const ghost = loadAnimation(graphics.ghost_idle);
+        const ghost = {
+            idle: loadAnimation(graphics.ghost_idle),
+            fixing: loadAnimation(graphics.ghost_fixing),
+        };
         const chamber = loadAnimation(graphics.chamber_increase);
         const background = loadStaticSprite(graphics.background);
         const machine = loadStaticSprite(graphics.machine);
@@ -211,7 +214,7 @@ export function App() {
             allResources.config.machine_locations.forEach((location) => 
                 renderStaticSprite(machine, location));
             renderAnimation(character, player);
-            renderAnimation(ghost, { x: player.x + 100, y: player.y });
+            renderAnimation(ghost.fixing, { x: player.x + 100, y: player.y });
             renderAnimation(chamber, allResources.config.chamber_location);
         }
         let lastTime = Date.now();
