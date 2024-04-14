@@ -70,14 +70,34 @@ export function App() {
 
         // Rendering utility functions
 
-        function loadAnimation(animation: typeof allResources.SummoningChamber_FullHD_ChamberProgressIncrease) {
+        function loadStaticSprite(sprite: typeof graphics.background) {
+            return  {
+                ...sprite_mesh,
+                texture: ShaderBuilder.loadImageData(gl as WebGL2RenderingContext, sliceToArray.Uint8Array(sprite.data), sprite.width, sprite.height),
+                textureResolution: [sprite.width, sprite.height] as Vec2,
+                sampleRect: [0, 0, sprite.width, sprite.height] as Vec4,
+            }
+        }
+
+        function loadAnimation(animation: typeof allResources.graphics.chamber_increase) {
+            console.table(animation);
             const spriteSheet = animation.sprite_sheet;
             return {
-                ...sprite,
+                ...sprite_mesh,
                 texture: ShaderBuilder.loadImageData(gl as WebGL2RenderingContext, sliceToArray.Uint8Array(spriteSheet.data), spriteSheet.width, spriteSheet.height),
                 textureResolution: [spriteSheet.width, spriteSheet.height] as Vec2,
                 animation_data: animation.animation_data,
             };
+        }
+
+        function renderStaticSprite(sprite: typeof machine, position: { x: number, y: number }) {
+            ShaderBuilder.renderMaterial(gl as WebGL2RenderingContext, spriteMaterial, {
+                ...world,
+                ...sprite,
+                spritePosition: ShaderBuilder.createBuffer(gl as WebGL2RenderingContext, new Float32Array([
+                    position.x, position.y
+                ])),
+            });
         }
 
         function updateAnimation(animation: typeof character) {
@@ -125,7 +145,7 @@ export function App() {
                 }
             `,
         });
-        const sprite = {
+        const sprite_mesh = {
             meshTriangle: ShaderBuilder.createElementBuffer(gl, new Uint16Array([
                 0, 1, 2,
                 0, 2, 3
@@ -147,17 +167,12 @@ export function App() {
                 -1, 1, 0, 1
             ] as Mat4,
         };
-        const character = loadAnimation(allResources.RoyalArcher_FullHD_Attack);
-        const chamber = loadAnimation(allResources.SummoningChamber_FullHD_ChamberProgressIncrease);
-        const background = {
-            ...sprite,
-            spritePosition: ShaderBuilder.createBuffer(gl, new Float32Array([
-                0, 0
-            ])),
-            texture: ShaderBuilder.loadImageData(gl, sliceToArray.Uint8Array(allResources.background.data), allResources.background.width, allResources.background.height),
-            textureResolution: [allResources.background.width, allResources.background.height] as Vec2,
-            sampleRect: [0, 0, allResources.background.width, allResources.background.height] as Vec4,
-        };
+        const graphics = allResources.graphics;
+        const character = loadAnimation(graphics.archer);
+        const ghost = loadAnimation(graphics.ghost_idle);
+        const chamber = loadAnimation(graphics.chamber_increase);
+        const background = loadStaticSprite(graphics.background);
+        const machine = loadStaticSprite(graphics.machine);
 
         {
             gl.clearColor(0, 0, 0, 1);
@@ -192,12 +207,12 @@ export function App() {
                 joystick,
             }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
 
-            ShaderBuilder.renderMaterial(gl, spriteMaterial, {
-                ...world,
-                ...background,
-            });
+            renderStaticSprite(background, { x: 0, y: 0 });
+            allResources.config.machine_locations.forEach((location) => 
+                renderStaticSprite(machine, location));
             renderAnimation(character, player);
-            renderAnimation(chamber, { x: 200, y: 200 });
+            renderAnimation(ghost, { x: player.x + 100, y: player.y });
+            renderAnimation(chamber, allResources.config.chamber_location);
         }
         let lastTime = Date.now();
         let frameCount = 0;
