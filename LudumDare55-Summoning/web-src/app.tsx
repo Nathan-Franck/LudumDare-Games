@@ -80,7 +80,6 @@ export function App() {
         }
 
         function loadAnimation(animation: typeof allResources.graphics.chamber_increase) {
-            console.table(animation);
             const spriteSheet = animation.sprite_sheet;
             return {
                 ...sprite_mesh,
@@ -90,31 +89,34 @@ export function App() {
             };
         }
 
-        function renderStaticSprite(sprite: typeof machine, position: { x: number, y: number }) {
-            ShaderBuilder.renderMaterial(gl as WebGL2RenderingContext, spriteMaterial, {
+        function renderStaticSprite(sprite: typeof machine, origin: {x: number, y: number}, position: { x: number, y: number }) {
+            const gl2 = gl as WebGL2RenderingContext;
+            ShaderBuilder.renderMaterial(gl2, spriteMaterial, {
                 ...world,
                 ...sprite,
-                spritePosition: ShaderBuilder.createBuffer(gl as WebGL2RenderingContext, new Float32Array([
+                spriteOrigin: ShaderBuilder.createBuffer(gl2, new Float32Array([origin.x, origin.y])),
+                spriteScale: ShaderBuilder.createBuffer(gl2, new Float32Array([1, 1])),
+                spritePosition: ShaderBuilder.createBuffer(gl2, new Float32Array([
                     position.x, position.y
                 ])),
             });
         }
 
-        function updateAnimation(animation: typeof character) {
+        function updateAnimation(animation: typeof ghost.idle) {
             const frame_time = (Date.now() - startTime) / animation.animation_data.framerate;
             const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
             return animation.animation_data.frames[currentFrame];
         }
 
-        function renderAnimation(animation: typeof character, spritePosition: { x: number, y: number }) {
+        function renderAnimation(animation: typeof ghost.idle, spritePosition: { x: number, y: number }, spriteScale: { x: number, y: number }) {
             const gl2 = gl as WebGL2RenderingContext;
             const currentFrameData = updateAnimation(animation);
             ShaderBuilder.renderMaterial(gl2, spriteMaterial, {
                 ...world,
                 ...animation,
-                spritePosition: ShaderBuilder.createBuffer(gl2, new Float32Array([
-                    spritePosition.x - currentFrameData[5], spritePosition.y - currentFrameData[6]
-                ])),
+                spriteOrigin: ShaderBuilder.createBuffer(gl2, new Float32Array([currentFrameData[5], currentFrameData[6]])),
+                spritePosition: ShaderBuilder.createBuffer(gl2, new Float32Array([spritePosition.x, spritePosition.y])),
+                spriteScale: ShaderBuilder.createBuffer(gl2, new Float32Array([spriteScale.x, spriteScale.y])),
                 sampleRect: [currentFrameData[0], currentFrameData[1], currentFrameData[2], currentFrameData[3]] as Vec4,
             });
         }
@@ -129,12 +131,14 @@ export function App() {
                 textureResolution: { type: "uniform", unit: "vec2", count: 1 },
                 sampleRect: { type: "uniform", unit: "vec4", count: 1 },
                 uv: { type: "varying", unit: "vec2" },
+                spriteOrigin: { type: "attribute", unit: "vec2", instanced: true },
                 spritePosition: { type: "attribute", unit: "vec2", instanced: true },
+                spriteScale: { type: "attribute", unit: "vec2", instanced: true },
             },
             vertSource: `
                 precision highp float;
                 void main(void) {
-                    gl_Position = perspectiveMatrix * vec4(meshVertexUV * sampleRect.zw + spritePosition, 0, 1);
+                    gl_Position = perspectiveMatrix * vec4((meshVertexUV * sampleRect.zw - spriteOrigin) * spriteScale + spritePosition, 0, 1);
                     uv = meshVertexUV;
                 }
             `,
@@ -168,7 +172,6 @@ export function App() {
             ] as Mat4,
         };
         const graphics = allResources.graphics;
-        const character = loadAnimation(graphics.archer);
         const ghost = {
             idle: loadAnimation(graphics.ghost_idle),
             fixing: loadAnimation(graphics.ghost_fixing),
@@ -210,12 +213,11 @@ export function App() {
                 joystick,
             }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
 
-            renderStaticSprite(background, { x: 0, y: 0 });
+            renderStaticSprite(background, { x: 0, y: 0 }, { x: 0, y: 0 });
             allResources.config.machine_locations.forEach((location) => 
-                renderStaticSprite(machine, location));
-            renderAnimation(character, player);
-            renderAnimation(ghost.fixing, { x: player.x + 100, y: player.y });
-            renderAnimation(chamber, allResources.config.chamber_location);
+                renderStaticSprite(machine, { x: allResources.graphics.machine.width / 2, y: allResources.graphics.machine.height / 2 }, location));
+            renderAnimation(ghost.fixing, player, { x: player.direction == "Left" ? -1 : 1, y: 1 });
+            renderAnimation(chamber, allResources.config.chamber_location, { x: 1, y: 1 });
         }
         let lastTime = Date.now();
         let frameCount = 0;
