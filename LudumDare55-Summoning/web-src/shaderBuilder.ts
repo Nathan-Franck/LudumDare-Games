@@ -374,4 +374,14 @@ export namespace ShaderBuilder {
 			}
 		}
 	}
+
+	export function cleanupResources<T extends Record<string, Texture | SizedBuffer | ElementBuffer>>(gl: WebGL2RenderingContext, binds: T) {
+		Object.values(binds).forEach((bind) => {
+			if ("type" in bind && (bind.type == "attribute" || bind.type == "element")) {
+				gl.deleteBuffer(bind.buffer);
+			} else {
+				gl.deleteTexture(bind.texture);
+			}
+		});
+	}
 }
