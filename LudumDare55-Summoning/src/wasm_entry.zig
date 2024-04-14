@@ -5,7 +5,6 @@ const type_definitions = @import("./type_definitions.zig");
 var message_arena: std.heap.ArenaAllocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
 
 export fn allocUint8(length: u32) [*]const u8 {
-    _ = message_arena.reset(.retain_capacity);
     const slice = message_arena.allocator().alloc(u8, length) catch
         @panic("failed to allocate memory");
     return slice.ptr;
@@ -69,7 +68,6 @@ pub fn Args(comptime func: anytype) type {
 }
 
 fn callWithJsonErr(name_ptr: [*]const u8, name_len: usize, args_ptr: [*]const u8, args_len: usize) !void {
-    _ = message_arena.reset(.retain_capacity);
     const allocator = message_arena.allocator();
     const name: []const u8 = name_ptr[0..name_len];
     const args_string: []const u8 = args_ptr[0..args_len];
@@ -92,6 +90,7 @@ fn callWithJsonErr(name_ptr: [*]const u8, name_len: usize, args_ptr: [*]const u8
             const result = try @call(.auto, func, args.value);
             const converted_result = try type_definitions.deepTypedArrayReferences(@TypeOf(result), allocator, result);
             dumpMessage(try std.json.stringifyAlloc(allocator, converted_result, .{}));
+            _ = message_arena.reset(.retain_capacity);
         },
     }
 }
