@@ -67,7 +67,37 @@ export function App() {
         const gl = canvas.getContext('webgl2');
         if (!gl)
             return;
-        // renderingRef.current = new Rendering(gl);
+
+        // Rendering utility functions
+        
+        function loadAnimation(animation: typeof allResources.SummoningChamber_FullHD_ChamberProgressIncrease) {
+            const spriteSheet = animation.sprite_sheet;
+            return {
+                ...sprite,
+                texture: ShaderBuilder.loadImageData(gl as WebGL2RenderingContext, sliceToArray.Uint8Array(spriteSheet.data), spriteSheet.width, spriteSheet.height),
+                textureResolution: [spriteSheet.width, spriteSheet.height] as Vec2,
+                animation_data: animation.animation_data,
+            };
+        }
+
+        function updateAnimation(animation: typeof character) {
+            const frame_time = (Date.now() - startTime) / animation.animation_data.framerate;
+            const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
+            return animation.animation_data.frames[currentFrame];
+        }
+
+        function renderAnimation(animation: typeof character, spritePosition: { x: number, y: number }) {
+            const gl2 = gl as WebGL2RenderingContext;
+            const currentFrameData = updateAnimation(animation);
+            ShaderBuilder.renderMaterial(gl2, spriteMaterial, {
+                ...world,
+                ...animation,
+                spritePosition: ShaderBuilder.createBuffer(gl2, new Float32Array([
+                    spritePosition.x - currentFrameData[5], spritePosition.y - currentFrameData[6]
+                ])),
+                sampleRect: [currentFrameData[0], currentFrameData[1], currentFrameData[2], currentFrameData[3]] as Vec4,
+            });
+        }
 
         var spriteMaterial = ShaderBuilder.generateMaterial(gl, {
             mode: 'TRIANGLES',
@@ -117,15 +147,6 @@ export function App() {
                 -1, 1, 0, 1
             ] as Mat4,
         };
-        function loadAnimation(animation: typeof allResources.SummoningChamber_FullHD_ChamberProgressIncrease) {
-            const spriteSheet = animation.sprite_sheet;
-            return {
-                ...sprite,
-                texture: ShaderBuilder.loadImageData(gl as WebGL2RenderingContext, sliceToArray.Uint8Array(spriteSheet.data), spriteSheet.width, spriteSheet.height),
-                textureResolution: [spriteSheet.width, spriteSheet.height] as Vec2,
-                animation_data: animation.animation_data,
-            };
-        }
         const character = loadAnimation(allResources.RoyalArcher_FullHD_Attack);
         const chamber = loadAnimation(allResources.SummoningChamber_FullHD_ChamberProgressIncrease);
         const background = {
@@ -146,7 +167,7 @@ export function App() {
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         }
-        
+
         function updateAndRender() {
             if (!gl)
                 return;
@@ -176,11 +197,6 @@ export function App() {
             // const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
             // const currentFrameData = animation.animation_data.frames[currentFrame];
 
-            function updateAnimation(animation: typeof character) {
-                const frame_time = (Date.now() - startTime) / animation.animation_data.framerate;
-                const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
-                return animation.animation_data.frames[currentFrame];
-            }
 
             ShaderBuilder.renderMaterial(gl, spriteMaterial, {
                 ...world,
@@ -196,18 +212,6 @@ export function App() {
             // });
             renderAnimation(character, player);
             renderAnimation(chamber, { x: 200, y: 200 });
-            function renderAnimation(animation: typeof character, spritePosition: { x: number, y: number }) {
-                const gl2 = gl as WebGL2RenderingContext;
-                const currentFrameData = updateAnimation(animation);
-                ShaderBuilder.renderMaterial(gl2, spriteMaterial, {
-                    ...world,
-                    ...animation,
-                    spritePosition: ShaderBuilder.createBuffer(gl2, new Float32Array([
-                        spritePosition.x - currentFrameData[5], spritePosition.y - currentFrameData[6]
-                    ])),
-                    sampleRect: [currentFrameData[0], currentFrameData[1], currentFrameData[2], currentFrameData[3]] as Vec4,
-                });
-            }
         }
         let lastTime = Date.now();
         let frameCount = 0;
