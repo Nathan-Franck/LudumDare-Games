@@ -23,10 +23,66 @@ const startTime = Date.now();
 
 export function App() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
     const [framerate, setFramerate] = useState(0);
+    const [keyboard, setKeyboard] = useState({ left: false, right: false, up: false, down: false, interact: false });
+    const [joystick, setJoystick] = useState({ x: 0, y: 0, interact: false });
+    const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
 
     useEffect(() => {
+        const resizeHandler = () => {
+            setWindowSize({ width: window.innerWidth, height: window.innerHeight });
+        };
+        window.addEventListener('resize', resizeHandler);
+        return () => {
+            window.removeEventListener('resize', resizeHandler);
+        };
     }, []);
+
+    useEffect(() => {
+        const eventKeyToKey = {
+            ArrowLeft: 'left',
+            ArrowRight: 'right',
+            ArrowUp: 'up',
+            ArrowDown: 'down',
+        } as const;
+        const keyHandler = (activate: boolean) => (event: KeyboardEvent) => {
+            const key = eventKeyToKey[event.key as keyof typeof eventKeyToKey];
+            if (key) {
+                setKeyboard(keyboard => ({ ...keyboard, [key]: activate }));
+            }
+        };
+        const keyHandlers = { down: keyHandler(true), up: keyHandler(false) };
+        window.addEventListener('keydown', keyHandlers.down);
+        window.addEventListener('keyup', keyHandlers.up)
+        return () => {
+            window.removeEventListener('keydown', keyHandlers.down);
+            window.removeEventListener('keyup', keyHandlers.up);
+        };
+    }, []);
+    useEffect(() => {
+        const gamepadHandler = () => {
+            const gamepads = navigator.getGamepads();
+            for (let i = 0; i < gamepads.length; i++) {
+                const gamepad = gamepads[i];
+                if (gamepad) {
+                    setJoystick({
+                        x: gamepad.axes[0],
+                        y: gamepad.axes[1],
+                        interact: gamepad.buttons[0].pressed,
+                    });
+                    break;
+                }
+            }
+        };
+        window.addEventListener('gamepadconnected', gamepadHandler);
+        window.addEventListener('gamepaddisconnected', gamepadHandler);
+        return () => {
+            window.removeEventListener('gamepadconnected', gamepadHandler);
+            window.removeEventListener('gamepaddisconnected', gamepadHandler);
+        };
+    }, []);
+
     useEffect(() => {
         if (!canvasRef.current)
             return;
@@ -62,7 +118,6 @@ export function App() {
                 }
             `,
         });
-        const animation = allResources.RoyalArcher_FullHD_Attack;
         const sprite = {
             meshTriangle: ShaderBuilder.createElementBuffer(gl, new Uint16Array([
                 0, 1, 2,
@@ -85,12 +140,12 @@ export function App() {
                 -1, 1, 0, 1
             ] as Mat4,
         };
+        const animation = allResources.RoyalArcher_FullHD_Attack;
         const spriteSheet = animation.sprite_sheet;
         const character = {
             ...sprite,
             texture: ShaderBuilder.loadImageData(gl, sliceToArray.Uint8Array(spriteSheet.data), spriteSheet.width, spriteSheet.height),
             textureResolution: [spriteSheet.width, spriteSheet.height] as Vec2,
-            // sampleRect: [0, 0, spriteSheet.width, spriteSheet.height] as Vec4,
         };
         const background = {
             ...sprite,
@@ -101,21 +156,24 @@ export function App() {
             textureResolution: [allResources.background.width, allResources.background.height] as Vec2,
             sampleRect: [0, 0, allResources.background.width, allResources.background.height] as Vec4,
         };
+        {
+            gl.clearColor(0, 0, 0, 1);
+            // gl.enable(gl.DEPTH_TEST); // Manually dictating order of rendering, so no need for depth test.
+            gl.clear(gl.COLOR_BUFFER_BIT);
+            gl.viewport(0, 0, windowSize.width, windowSize.height);
+            gl.enable(gl.BLEND);
+            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        }
         function updateAndRender() {
             if (!gl)
                 return;
 
-            {
-                gl.clearColor(0, 0, 0, 1);
-                // gl.enable(gl.DEPTH_TEST);
-                gl.clear(gl.COLOR_BUFFER_BIT);
-                gl.viewport(0, 0, canvas.width, canvas.height);
-                gl.enable(gl.BLEND);
-                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-            }
-
             const time = Date.now() - startTime;
-            // const { player } = callWasm("update", { time_ms: time, keyboard: { left: false, right: false, up: false, down: false, interact: false }, joystick: { x: 0, y: 0, interact: false } }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
+            // const { player } = callWasm("update", {
+            //     time_ms: time,
+            //     keyboard,
+            //     joystick,
+            // }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
             // const { x, y, animation } = player;
 
             const frame_time = (Date.now() - startTime) / animation.animation_data.framerate;
@@ -137,6 +195,7 @@ export function App() {
         }
         let lastTime = Date.now();
         let frameCount = 0;
+        let quit = false;
         const loop = () => {
             const time = Date.now();
             frameCount++;
@@ -146,16 +205,20 @@ export function App() {
                 lastTime = time;
             }
             updateAndRender();
-            requestAnimationFrame(loop);
+            if (!quit)
+                requestAnimationFrame(loop);
         }
         requestAnimationFrame(loop);
+        return () => {
+            quit = true;
+        };
     }, [canvasRef]);
 
     return (
         <>
             <div class={classes.frameRate}>Frame Rate: {framerate}</div>
             <style>{encodedStyle}</style>
-            <canvas ref={canvasRef} class={classes.canvas} id="canvas" width={window.innerWidth} height={window.innerHeight}></canvas>
+            <canvas ref={canvasRef} class={classes.canvas} id="canvas" width={windowSize.width} height={windowSize.height}></canvas>
         </>
     )
 }
