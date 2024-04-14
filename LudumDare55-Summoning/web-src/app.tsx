@@ -69,7 +69,7 @@ export function App() {
             return;
 
         // Rendering utility functions
-        
+
         function loadAnimation(animation: typeof allResources.SummoningChamber_FullHD_ChamberProgressIncrease) {
             const spriteSheet = animation.sprite_sheet;
             return {
@@ -161,7 +161,6 @@ export function App() {
 
         {
             gl.clearColor(0, 0, 0, 1);
-            // gl.enable(gl.DEPTH_TEST); // Manually dictating order of rendering, so no need for depth test.
             gl.clear(gl.COLOR_BUFFER_BIT);
             gl.viewport(0, 0, windowSize.width, windowSize.height);
             gl.enable(gl.BLEND);
@@ -193,23 +192,10 @@ export function App() {
                 joystick,
             }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
 
-            // const frame_time = (Date.now() - startTime) / animation.animation_data.framerate;
-            // const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
-            // const currentFrameData = animation.animation_data.frames[currentFrame];
-
-
             ShaderBuilder.renderMaterial(gl, spriteMaterial, {
                 ...world,
                 ...background,
             });
-            // ShaderBuilder.renderMaterial(gl, spriteMaterial, {
-            //     ...world,
-            //     ...character,
-            //     spritePosition: ShaderBuilder.createBuffer(gl, new Float32Array([
-            //         player.x - currentFrameData[5], player.y - currentFrameData[6]
-            //     ])),
-            //     sampleRect: [currentFrameData[0], currentFrameData[1], currentFrameData[2], currentFrameData[3]] as Vec4,
-            // });
             renderAnimation(character, player);
             renderAnimation(chamber, { x: 200, y: 200 });
         }
