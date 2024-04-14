@@ -71,7 +71,7 @@ export function App() {
         // Rendering utility functions
 
         function loadStaticSprite(sprite: typeof graphics.background) {
-            return  {
+            return {
                 ...sprite_mesh,
                 texture: ShaderBuilder.loadImageData(gl as WebGL2RenderingContext, sliceToArray.Uint8Array(sprite.data), sprite.width, sprite.height),
                 textureResolution: [sprite.width, sprite.height] as Vec2,
@@ -89,7 +89,7 @@ export function App() {
             };
         }
 
-        function renderStaticSprite(sprite: typeof machine, origin: {x: number, y: number}, position: { x: number, y: number }) {
+        function renderStaticSprite(sprite: typeof machine, origin: { x: number, y: number }, position: { x: number, y: number }) {
             const gl2 = gl as WebGL2RenderingContext;
             ShaderBuilder.renderMaterial(gl2, spriteMaterial, {
                 ...world,
@@ -102,13 +102,13 @@ export function App() {
             });
         }
 
-        function updateAnimation(animation: typeof ghost.idle) {
+        function updateAnimation(animation: typeof ghost.idleSide) {
             const frame_time = (Date.now() - startTime) / animation.animation_data.framerate;
             const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
             return animation.animation_data.frames[currentFrame];
         }
 
-        function renderAnimation(animation: typeof ghost.idle, spritePosition: { x: number, y: number }, spriteScale: { x: number, y: number }) {
+        function renderAnimation(animation: typeof ghost.idleSide, spritePosition: { x: number, y: number }, spriteScale: { x: number, y: number }) {
             const gl2 = gl as WebGL2RenderingContext;
             const currentFrameData = updateAnimation(animation);
             ShaderBuilder.renderMaterial(gl2, spriteMaterial, {
@@ -173,7 +173,9 @@ export function App() {
         };
         const graphics = allResources.graphics;
         const ghost = {
-            idle: loadAnimation(graphics.ghost_idle),
+            idleSide: loadAnimation(graphics.ghost_idle_side),
+            idleFront: loadAnimation(graphics.ghost_idle_front),
+            idleBack: loadAnimation(graphics.ghost_idle_back),
             fixing: loadAnimation(graphics.ghost_fixing),
         };
         const chamber = loadAnimation(graphics.chamber_increase);
@@ -214,9 +216,16 @@ export function App() {
             }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
 
             renderStaticSprite(background, { x: 0, y: 0 }, { x: 0, y: 0 });
-            allResources.config.machine_locations.forEach((location) => 
+            allResources.config.machine_locations.forEach((location) =>
                 renderStaticSprite(machine, { x: allResources.graphics.machine.width / 2, y: allResources.graphics.machine.height / 2 }, location));
-            renderAnimation(ghost.fixing, player, { x: player.direction == "Left" ? -1 : 1, y: 1 });
+            const currentAnimation = player.action == "Fixing"
+                ? ghost.fixing
+                : player.direction == "Up"
+                    ? ghost.idleBack
+                    : player.direction == "Down"
+                        ? ghost.idleFront
+                        : ghost.idleSide;
+            renderAnimation(currentAnimation, player, { x: player.direction == "Left" ? -1 : 1, y: 1 });
             renderAnimation(chamber, allResources.config.chamber_location, { x: 1, y: 1 });
         }
         let lastTime = Date.now();
