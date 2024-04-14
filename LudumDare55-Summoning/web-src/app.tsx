@@ -162,7 +162,7 @@ export function App() {
             ])),
         };
         // Convert 1080p to window height
-        const renderScale = windowSize.height / 1080;
+        const renderScale = windowSize.height / allResources.config.screen.height;
         const world = {
             perspectiveMatrix: [
                 2 / windowSize.width * renderScale, 0, 0, 0,
