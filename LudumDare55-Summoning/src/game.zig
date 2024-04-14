@@ -5,12 +5,14 @@ pub fn getAllResources() !struct {
     background: assets.PngImage,
     SummoningChamber_FullHD_ChamberProgressIncrease: assets.SpriteSheetAnimation,
     Ghost_FullHD_Idle: assets.SpriteSheetAnimation,
+    RoyalArcher_FullHD_Attack: assets.SpriteSheetAnimation,
 } {
     const allocator = std.heap.page_allocator;
     return .{
         .background = try assets.PngImage.load(allocator, "background"),
         .SummoningChamber_FullHD_ChamberProgressIncrease = try assets.SpriteSheetAnimation.load(allocator, "SummoningChamber_FullHD_ChamberProgressIncrease"),
         .Ghost_FullHD_Idle = try assets.SpriteSheetAnimation.load(allocator, "Ghost_FullHD_Idle"),
+        .RoyalArcher_FullHD_Attack = try assets.SpriteSheetAnimation.load(allocator, "RoyalArcher_FullHD_Attack"),
     };
 }
 
@@ -44,7 +46,7 @@ pub fn update(inputs: struct {
     // Combine inputs from keyboard and joystick
     const direction_input = .{
         .x = if (inputs.keyboard.left) -1.0 else if (inputs.keyboard.right) 1.0 else inputs.joystick.x,
-        .y = if (inputs.keyboard.down) -1.0 else if (inputs.keyboard.up) 1.0 else inputs.joystick.y,
+        .y = if (inputs.keyboard.down) 1.0 else if (inputs.keyboard.up) -1.0 else inputs.joystick.y,
     };
 
     // Move player

@@ -117,13 +117,17 @@ export function App() {
                 -1, 1, 0, 1
             ] as Mat4,
         };
-        const animation = allResources.SummoningChamber_FullHD_ChamberProgressIncrease;
-        const spriteSheet = animation.sprite_sheet;
-        const character = {
-            ...sprite,
-            texture: ShaderBuilder.loadImageData(gl, sliceToArray.Uint8Array(spriteSheet.data), spriteSheet.width, spriteSheet.height),
-            textureResolution: [spriteSheet.width, spriteSheet.height] as Vec2,
-        };
+        function loadAnimation(animation: typeof allResources.SummoningChamber_FullHD_ChamberProgressIncrease) {
+            const spriteSheet = animation.sprite_sheet;
+            return {
+                ...sprite,
+                texture: ShaderBuilder.loadImageData(gl as WebGL2RenderingContext, sliceToArray.Uint8Array(spriteSheet.data), spriteSheet.width, spriteSheet.height),
+                textureResolution: [spriteSheet.width, spriteSheet.height] as Vec2,
+                animation_data: animation.animation_data,
+            };
+        }
+        const character = loadAnimation(allResources.RoyalArcher_FullHD_Attack);
+        const chamber = loadAnimation(allResources.SummoningChamber_FullHD_ChamberProgressIncrease);
         const background = {
             ...sprite,
             spritePosition: ShaderBuilder.createBuffer(gl, new Float32Array([
@@ -133,6 +137,7 @@ export function App() {
             textureResolution: [allResources.background.width, allResources.background.height] as Vec2,
             sampleRect: [0, 0, allResources.background.width, allResources.background.height] as Vec4,
         };
+
         {
             gl.clearColor(0, 0, 0, 1);
             // gl.enable(gl.DEPTH_TEST); // Manually dictating order of rendering, so no need for depth test.
@@ -141,6 +146,7 @@ export function App() {
             gl.enable(gl.BLEND);
             gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         }
+        
         function updateAndRender() {
             if (!gl)
                 return;
@@ -166,22 +172,42 @@ export function App() {
                 joystick,
             }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
 
-            const frame_time = (Date.now() - startTime) / animation.animation_data.framerate;
-            const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
-            const currentFrameData = animation.animation_data.frames[currentFrame];
+            // const frame_time = (Date.now() - startTime) / animation.animation_data.framerate;
+            // const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
+            // const currentFrameData = animation.animation_data.frames[currentFrame];
+
+            function updateAnimation(animation: typeof character) {
+                const frame_time = (Date.now() - startTime) / animation.animation_data.framerate;
+                const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
+                return animation.animation_data.frames[currentFrame];
+            }
 
             ShaderBuilder.renderMaterial(gl, spriteMaterial, {
                 ...world,
                 ...background,
             });
-            ShaderBuilder.renderMaterial(gl, spriteMaterial, {
-                ...world,
-                ...character,
-                spritePosition: ShaderBuilder.createBuffer(gl, new Float32Array([
-                    player.x - currentFrameData[5], player.y - currentFrameData[6]
-                ])),
-                sampleRect: [currentFrameData[0], currentFrameData[1], currentFrameData[2], currentFrameData[3]] as Vec4,
-            });
+            // ShaderBuilder.renderMaterial(gl, spriteMaterial, {
+            //     ...world,
+            //     ...character,
+            //     spritePosition: ShaderBuilder.createBuffer(gl, new Float32Array([
+            //         player.x - currentFrameData[5], player.y - currentFrameData[6]
+            //     ])),
+            //     sampleRect: [currentFrameData[0], currentFrameData[1], currentFrameData[2], currentFrameData[3]] as Vec4,
+            // });
+            renderAnimation(character, player);
+            renderAnimation(chamber, { x: 200, y: 200 });
+            function renderAnimation(animation: typeof character, spritePosition: { x: number, y: number }) {
+                const gl2 = gl as WebGL2RenderingContext;
+                const currentFrameData = updateAnimation(animation);
+                ShaderBuilder.renderMaterial(gl2, spriteMaterial, {
+                    ...world,
+                    ...animation,
+                    spritePosition: ShaderBuilder.createBuffer(gl2, new Float32Array([
+                        spritePosition.x - currentFrameData[5], spritePosition.y - currentFrameData[6]
+                    ])),
+                    sampleRect: [currentFrameData[0], currentFrameData[1], currentFrameData[2], currentFrameData[3]] as Vec4,
+                });
+            }
         }
         let lastTime = Date.now();
         let frameCount = 0;
