@@ -6,6 +6,7 @@ import { ShaderBuilder, Mat4, Vec2, Vec4 } from "./shaderBuilder";
 const { classes, encodedStyle } = declareStyle({
     frameRate: {
         fontFamily: 'monospace',
+        color: 'white',
     },
     canvas: {
         width: "100%",
@@ -13,7 +14,7 @@ const { classes, encodedStyle } = declareStyle({
         position: "absolute",
         left: 0,
         top: 0,
-        zIndex: 0,
+        zIndex: -1,
     },
 });
 
@@ -148,7 +149,7 @@ export function App() {
             requestAnimationFrame(loop);
         }
         requestAnimationFrame(loop);
-    }, []);
+    }, [canvasRef]);
 
     return (
         <>
