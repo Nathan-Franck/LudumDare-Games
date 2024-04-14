@@ -63,7 +63,7 @@ const config: Config = .{
     .player_speed = 400,
     .fix_proximity = 200,
     .fix_snap_offset = .{ .x = 180.0, .y = 0.0 },
-    .chamber_location = .{ .x = 950.0, .y = 200.0 },
+    .chamber_location = .{ .x = 950.0, .y = 300.0 },
     .machine_locations = .{
         .{ .x = 250, .y = 200 },
         .{ .x = 250, .y = 850 },

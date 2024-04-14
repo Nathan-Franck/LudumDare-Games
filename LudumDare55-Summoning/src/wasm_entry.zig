@@ -2,8 +2,11 @@ const std = @import("std");
 const game = @import("./game.zig");
 const type_definitions = @import("./type_definitions.zig");
 
+var message_arena: std.heap.ArenaAllocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+
 export fn allocUint8(length: u32) [*]const u8 {
-    const slice = std.heap.page_allocator.alloc(u8, length) catch
+    _ = message_arena.reset(.retain_capacity);
+    const slice = message_arena.allocator().alloc(u8, length) catch
         @panic("failed to allocate memory");
     return slice.ptr;
 }
@@ -66,7 +69,8 @@ pub fn Args(comptime func: anytype) type {
 }
 
 fn callWithJsonErr(name_ptr: [*]const u8, name_len: usize, args_ptr: [*]const u8, args_len: usize) !void {
-    const allocator = std.heap.page_allocator;
+    _ = message_arena.reset(.retain_capacity);
+    const allocator = message_arena.allocator();
     const name: []const u8 = name_ptr[0..name_len];
     const args_string: []const u8 = args_ptr[0..args_len];
     const case = std.meta.stringToEnum(InterfaceEnum, name) orelse {
@@ -93,8 +97,8 @@ fn callWithJsonErr(name_ptr: [*]const u8, name_len: usize, args_ptr: [*]const u8
 }
 
 export fn callWithJson(name_ptr: [*]const u8, name_len: usize, args_ptr: [*]const u8, args_len: usize) void {
-    const allocator = std.heap.page_allocator;
     callWithJsonErr(name_ptr, name_len, args_ptr, args_len) catch |err| {
+        const allocator = std.heap.page_allocator;
         dumpError(std.fmt.allocPrint(allocator, "error: {?}\n", .{err}) catch unreachable);
         return;
     };
