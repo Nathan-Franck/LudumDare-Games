@@ -58,7 +58,7 @@ const Config = struct {
     levels: [4]struct {
         title: []const u8,
         duration_ms: u64,
-        breakdown_delay_ms: u64,
+        breakdown_delay_ms: i32,
         required_online: u32,
     },
     fix_proximity: f32,
@@ -78,7 +78,7 @@ const config: Config = .{
     .player_dash_cooldown_ms = 500,
     .player_repair_delay_ms = 250,
     .levels = .{
-        .{ .title = "Level 1 - Bring Me Back", .duration_ms = 1000 * 20, .breakdown_delay_ms = 1000 * 20, .required_online = 1 },
+        .{ .title = "Level 1 - Bring Me Back", .duration_ms = 1000 * 20, .breakdown_delay_ms = 1000 * 5, .required_online = 1 },
         .{ .title = "Level 2 - Poor Reliability", .duration_ms = 1000 * 20, .breakdown_delay_ms = 1000 * 10, .required_online = 1 },
         .{ .title = "Level 3 - We Need More Power", .duration_ms = 1000 * 30, .breakdown_delay_ms = 1000 * 10, .required_online = 2 },
         .{ .title = "Level 4 - The Final Spawn", .duration_ms = 1000 * 40, .breakdown_delay_ms = 1000 * 8, .required_online = 3 },
@@ -115,10 +115,13 @@ const pseudo_random_list = [_]u64{
 };
 
 const MachineState = struct {
-    delay_until_breakdown_ms: u64,
+    delay_until_breakdown_ms: i32,
+    broken: bool,
 };
 
 const State = struct {
+    user_message: ?[]const u8,
+    in_danger: bool,
     current_level: u32,
     was_interacting: bool,
     was_dashing: bool,
@@ -137,6 +140,8 @@ const State = struct {
 };
 
 const first_level_state = .{
+    .user_message = null,
+    .in_danger = false,
     .current_level = 0,
     .was_interacting = false,
     .was_dashing = false,
@@ -153,14 +158,15 @@ const first_level_state = .{
         .last_repair_time_ms = 0,
     },
 };
-fn randomFromBreakdownDelay(breakdown_delay_ms: u64, random_number: u64) u64 {
-    return random_number % breakdown_delay_ms / 2 + breakdown_delay_ms / 2;
+fn randomFromBreakdownDelay(breakdown_delay_ms: i32, random_number: u64) i32 {
+    return @as(i32, @intCast(random_number % @as(u64, @intCast(breakdown_delay_ms))));
 }
 fn levelStateState(level: u32) [4]MachineState {
     const level_config = config.levels[level];
     var machine_states: [4]MachineState = undefined;
     for (&machine_states, 0..) |*machine_state, i| {
-        machine_state.delay_until_breakdown_ms = randomFromBreakdownDelay(level_config.breakdown_delay_ms, level * config.levels.len + i);
+        machine_state.delay_until_breakdown_ms = randomFromBreakdownDelay(level_config.breakdown_delay_ms, pseudo_random_list[level * config.levels.len + i]);
+        machine_state.broken = false;
     }
     return machine_states;
 }
@@ -175,7 +181,8 @@ fn repairMachineTick(time_ms: u64) void {
     const the_machine = &state.machine_states[target_machine_index];
 
     // Machine breakdown delay APPROACHES (doesn't reach) the level's breakdown delay each tick.
-    the_machine.delay_until_breakdown_ms += @as(u64, @intFromFloat(@as(f32, @floatFromInt(breakdown_delay - the_machine.delay_until_breakdown_ms)) * 0.1));
+    the_machine.broken = false;
+    the_machine.delay_until_breakdown_ms += @as(i32, @intFromFloat(@as(f32, @floatFromInt(breakdown_delay - the_machine.delay_until_breakdown_ms)) * 0.1));
 }
 
 pub fn update(inputs: struct {
@@ -207,6 +214,28 @@ pub fn update(inputs: struct {
     }
 
     // Degrade machines - these are what keep the chamber going.
+    var currently_online: u32 = 0;
+    for (&state.machine_states) |*machine_state| {
+        if (!machine_state.broken) {
+            machine_state.delay_until_breakdown_ms -= @as(i32, @intFromFloat(delta_time * 1000.0));
+            if (machine_state.delay_until_breakdown_ms <= 0) {
+                machine_state.broken = true;
+            }
+        }
+        if (!machine_state.broken) {
+            currently_online += 1;
+        }
+    }
+
+    // In danger if there's only one machine left before failure.
+    state.in_danger = currently_online == config.levels[state.current_level].required_online;
+
+    // If too many machines are currently broken, the chamber will stop.
+    if (currently_online < config.levels[state.current_level].required_online) {
+        state.chamber_progress = 0.0;
+        state.user_message = "Not enough machines are online!";
+        state.machine_states = levelStateState(state.current_level);
+    }
 
     // Combine inputs from keyboard and joystick.
     const input_direction = .{

@@ -16,6 +16,16 @@ const { classes, encodedStyle } = declareStyle({
         top: 0,
         zIndex: -1,
     },
+    dangerMessage: {
+        color: 'red',
+        fontFamily: 'monospace',
+        fontSize: '2em',
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        animation: 'rotationalPunch 4s',
+    },
 });
 
 const allResources = callWasm("getAllResources") as Exclude<ReturnType<typeof callWasm<"getAllResources">>, { "error": any }>;
@@ -27,6 +37,8 @@ export function App() {
     const [framerate, setFramerate] = useState(0);
     const [currentLevel, setCurrentLevel] = useState(0);
     const [levelTitle, setLevelTitle] = useState("");
+    const [inDanger, setInDanger] = useState(false);
+    const [machineTimes, setMachineTimes] = useState([0, 0, 0, 0]);
 
     let keyboard = { left: false, right: false, up: false, down: false, interact: false, dash: false };
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -219,14 +231,16 @@ export function App() {
             }
 
             const time = Date.now();
-            const result = callWasm("update", {
+            const state = callWasm("update", {
                 time_ms: time,
                 keyboard,
                 joystick,
             }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
-            const { player } = result;
-            setCurrentLevel(result.current_level);
-            setLevelTitle(sliceToString(allResources.config.levels[result.current_level].title));
+            const { player } = state;
+            setCurrentLevel(state.current_level);
+            setLevelTitle(sliceToString(allResources.config.levels[state.current_level].title));
+            setInDanger(state.in_danger);
+            setMachineTimes(state.machine_states.map((machine) => machine.delay_until_breakdown_ms));
 
             // Build a list of things to render.
             const thingsToRender: Array<
@@ -234,7 +248,7 @@ export function App() {
                 | { type: "animation", animation: typeof ghost.idleSide, position: { x: number, y: number }, scale: { x: number, y: number }, progress?: number}
             > = [
                 { type: "sprite", sprite: background, origin: { x: 0, y: 0 }, position: { x: 0, y: 0 } },
-                { type: "animation", animation: chamber_increase, position: allResources.config.chamber_location, scale: { x: 1, y: 1 }, progress: result.chamber_progress },
+                { type: "animation", animation: chamber_increase, position: allResources.config.chamber_location, scale: { x: 1, y: 1 }, progress: state.chamber_progress },
                 {
                     type: "animation",
                     animation: player.action === "Fixing" ? ghost.fixing : player.view_direction === "Up" ? ghost.idleBack : player.view_direction === "Down" ? ghost.idleFront : ghost.idleSide,
@@ -285,7 +299,21 @@ export function App() {
             <div class={classes.devTool}>Frame Rate: {framerate}</div>
             <div class={classes.devTool}>Current Level: {currentLevel}</div>
             <div class={classes.devTool}>Level Title: {levelTitle}</div>
-            <style>{encodedStyle}</style>
+            <div class={classes.devTool}>In Danger: {inDanger ? "Yes" : "No"}</div>
+            <div class={classes.devTool}>Machine Times: {machineTimes.join(", ")}</div>
+            {inDanger ? <div class={classes.dangerMessage}>{"DANGER! MACHINES MUST BE KEPT ONLINE!"}</div> : null}
+            <style>{`
+                @keyframes rotationalPunch {
+                    0% { transform: rotate(0deg); }
+                    5% { transform: rotate(5deg); }
+                    10% { transform: rotate(-5deg); }
+                    15% { transform: rotate(3deg); }
+                    20% { transform: rotate(-3deg); }
+                    25% { transform: rotate(2deg); }
+                    30% { transform: rotate(-2deg); }
+                    40% { transform: rotate(0deg); }
+                }
+            `}{encodedStyle}</style>
             <canvas ref={canvasRef} class={classes.canvas} id="canvas" width={windowSize.width} height={windowSize.height}></canvas>
         </>
     )
