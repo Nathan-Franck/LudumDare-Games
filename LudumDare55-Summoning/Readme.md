@@ -1,5 +1,9 @@
 # Ludum Dare 55 - Summoning
 
+Game is Published!
+* (Ludum Dare Game Jam)[https://ldjam.com/events/ludum-dare/55/soul-technician]
+* (Itch.io)[https://nathan-franck.itch.io/ludum-dare-55]
+
 ![Gameplay Screenshot](./gameplay_screenshot.png)
 
 # Development Environment
@@ -32,6 +36,8 @@ bun run dev
 * React frontend reads in state data and displays to user, passes back input events from the user to the backend game state machine to update.
   * [./web-src/shaderBuilder.ts](./web-src/shaderBuilder.ts) Wraps WebGL complexity in a typesafe wrapper, making refactoring names and providing proper data types easy
   * [./web-src/app.tsx](./web-src/app.tsx) Contains the Game's graphics as well as a full implementation of the EaselJS spritesheet animation JSON standard for the game's sprites
+ 
+Making games web-first is great - since for small games, a small amount of people can play a lot of web-games without worring about compatability, viruses, security. Web also allows your game to be played on a variet of devices. Having the core of the game run in Zig means that later, it could be possible to port the game to non-web platforms and only worry about interfacing with input, rendering and sound for that platform.
 
 # Game Design
 * 4 Machines are working on a summoning
