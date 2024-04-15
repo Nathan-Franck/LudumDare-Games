@@ -24,6 +24,10 @@ const { classes, encodedStyle } = declareStyle({
         top: '50%',
         left: '50%',
         transform: 'translate(-50%, -50%)',
+        // ensure they don't affect the window
+        overflow: 'hidden',
+        whiteSpace: 'nowrap',
+
         animation: 'rotationalPunch 4s',
     },
 });
@@ -39,6 +43,7 @@ export function App() {
     const [levelTitle, setLevelTitle] = useState("");
     const [inDanger, setInDanger] = useState(false);
     const [machineTimes, setMachineTimes] = useState([0, 0, 0, 0]);
+    const [machinesBroken, setMachinesBroken] = useState([false, false, false, false]);
 
     let keyboard = { left: false, right: false, up: false, down: false, interact: false, dash: false };
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -241,22 +246,23 @@ export function App() {
             setLevelTitle(sliceToString(allResources.config.levels[state.current_level].title));
             setInDanger(state.in_danger);
             setMachineTimes(state.machine_states.map((machine) => machine.delay_until_breakdown_ms));
+            setMachinesBroken(state.machine_states.map((machine) => machine.broken));
 
             // Build a list of things to render.
             const thingsToRender: Array<
                 | { type: "sprite", sprite: typeof machine, origin: { x: number, y: number }, position: { x: number, y: number } }
-                | { type: "animation", animation: typeof ghost.idleSide, position: { x: number, y: number }, scale: { x: number, y: number }, progress?: number}
+                | { type: "animation", animation: typeof ghost.idleSide, position: { x: number, y: number }, scale: { x: number, y: number }, progress?: number }
             > = [
-                { type: "sprite", sprite: background, origin: { x: 0, y: 0 }, position: { x: 0, y: 0 } },
-                { type: "animation", animation: chamber_increase, position: allResources.config.chamber_location, scale: { x: 1, y: 1 }, progress: state.chamber_progress },
-                {
-                    type: "animation",
-                    animation: player.action === "Fixing" ? ghost.fixing : player.view_direction === "Up" ? ghost.idleBack : player.view_direction === "Down" ? ghost.idleFront : ghost.idleSide,
-                    position: player.position,
-                    scale: { x: player.view_direction === "Left" ? -1 : 1, y: 1 },
-                },
-                ...allResources.config.machine_locations.map((location) => ({ type: "sprite" as const, sprite: machine, origin: { x: graphics.machine.width / 2, y: graphics.machine.height / 2 }, position: location })),
-            ];
+                    { type: "sprite", sprite: background, origin: { x: 0, y: 0 }, position: { x: 0, y: 0 } },
+                    { type: "animation", animation: chamber_increase, position: allResources.config.chamber_location, scale: { x: 1, y: 1 }, progress: state.chamber_progress },
+                    {
+                        type: "animation",
+                        animation: player.action === "Fixing" ? ghost.fixing : player.view_direction === "Up" ? ghost.idleBack : player.view_direction === "Down" ? ghost.idleFront : ghost.idleSide,
+                        position: player.position,
+                        scale: { x: player.view_direction === "Left" ? -1 : 1, y: 1 },
+                    },
+                    ...allResources.config.machine_locations.map((location) => ({ type: "sprite" as const, sprite: machine, origin: { x: graphics.machine.width / 2, y: graphics.machine.height / 2 }, position: location })),
+                ];
 
             // Sort by y position.
             thingsToRender.sort((a, b) => a.position.y - b.position.y);
@@ -301,19 +307,23 @@ export function App() {
             <div class={classes.devTool}>Level Title: {levelTitle}</div>
             <div class={classes.devTool}>In Danger: {inDanger ? "Yes" : "No"}</div>
             <div class={classes.devTool}>Machine Times: {machineTimes.join(", ")}</div>
-            {inDanger ? <div class={classes.dangerMessage}>{"DANGER! MACHINES MUST BE KEPT ONLINE!"}</div> : null}
+            { inDanger ? <div class={classes.dangerMessage}>{"DANGER! MACHINES MUST BE KEPT ONLINE!"}</div> : null }
             <style>{`
                 @keyframes rotationalPunch {
-                    0% { transform: rotate(0deg); }
-                    5% { transform: rotate(5deg); }
-                    10% { transform: rotate(-5deg); }
-                    15% { transform: rotate(3deg); }
-                    20% { transform: rotate(-3deg); }
-                    25% { transform: rotate(2deg); }
-                    30% { transform: rotate(-2deg); }
-                    40% { transform: rotate(0deg); }
+                    0% { transform: translate(-50%, -50%) rotate(0deg); }
+                    5% { transform: translate(-50%, -50%) rotate(5deg); }
+                    10% { transform: translate(-50%, -50%) rotate(-5deg); }
+                    15% { transform: translate(-50%, -50%) rotate(3deg); }
+                    20% { transform: translate(-50%, -50%) rotate(-3deg); }
+                    25% { transform: translate(-50%, -50%) rotate(2deg); }
+                    30% { transform: translate(-50%, -50%) rotate(-2deg); }
+                    40% { transform: translate(-50%, -50%) rotate(0deg); }
                 }
             `}{encodedStyle}</style>
+            {machinesBroken.map((broken, index) => broken ? <div class={classes.dangerMessage} style={{
+                left: `${allResources.config.machine_locations[index].x / canvasRef.current!.width * 100}%`,
+                top: `${allResources.config.machine_locations[index].y / canvasRef.current!.height * 100}%`,
+            }}>{"!!! MACHINE BROKEN !!!"}</div> : null)}
             <canvas ref={canvasRef} class={classes.canvas} id="canvas" width={windowSize.width} height={windowSize.height}></canvas>
         </>
     )
