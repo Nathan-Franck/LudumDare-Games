@@ -364,7 +364,7 @@ export namespace ShaderBuilder {
 				.find((entry): entry is [typeof entry[0], Element] =>
 					entry[1].type == "element");
 			if (elementEntry != null) {
-				const [elementKey, element] = elementEntry;
+				const [elementKey] = elementEntry;
 				const data = (binds as any)[elementKey] as SizedBuffer;
 				gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, data.buffer);
 

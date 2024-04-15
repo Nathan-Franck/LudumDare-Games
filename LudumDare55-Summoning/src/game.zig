@@ -20,7 +20,7 @@ pub fn getAllResources() !struct {
         .graphics = .{
             .background = try assets.PngImage.load(allocator, "Summoning_0005_BG"),
             .machine = try assets.PngImage.load(allocator, "Summoning_0001_Machine"),
-            .chamber_increase = try assets.SpriteSheetAnimation.load(allocator, "SummoningChamber_FullHD_ChamberProgressIncrease"),
+            .chamber_increase = try assets.SpriteSheetAnimation.load(allocator, "SummoningChamber_FullHD_Materlalize "),
             .ghost_idle_side = try assets.SpriteSheetAnimation.load(allocator, "Ghost_FullHD_IdleSide"),
             .ghost_idle_front = try assets.SpriteSheetAnimation.load(allocator, "Ghost_FullHD_IdleFront"),
             .ghost_idle_back = try assets.SpriteSheetAnimation.load(allocator, "Ghost_FullHD_IdleBack"),
@@ -29,7 +29,7 @@ pub fn getAllResources() !struct {
     };
 }
 
-const Direction = enum {
+const ViewDirection = enum {
     Left,
     Right,
     Up,
@@ -43,24 +43,37 @@ const Action = enum {
 
 const State = struct {
     was_interacting: bool,
-    last_time_ms: u32,
-    player: struct { x: f32, y: f32, direction: Direction, action: Action },
+    was_dashing: bool,
+    last_time_ms: u64,
+    player: struct {
+        position: Point,
+        movement_direction: Point,
+        view_direction: ViewDirection,
+        action: Action,
+        dash_time_ms: u64,
+    },
 };
 
 const Config = struct {
     screen: struct { width: u32, height: u32 },
     controller_dead_zone: f32,
     player_speed: f32,
+    player_dash_speed: f32,
+    player_dash_duration_ms: u64,
     fix_proximity: f32,
     fix_snap_offset: struct { x: f32, y: f32 },
     chamber_location: struct { x: f32, y: f32 },
     machine_locations: [4]struct { x: f32, y: f32 },
 };
 
+const Point = struct { x: f32, y: f32 };
+
 const config: Config = .{
     .screen = .{ .width = 1920, .height = 1080 },
     .controller_dead_zone = 0.1,
     .player_speed = 400,
+    .player_dash_speed = 800,
+    .player_dash_duration_ms = 200,
     .fix_proximity = 200,
     .fix_snap_offset = .{ .x = 180.0, .y = 0.0 },
     .chamber_location = .{ .x = 950.0, .y = 300.0 },
@@ -74,70 +87,91 @@ const config: Config = .{
 
 var state: State = .{
     .was_interacting = false,
+    .was_dashing = false,
     .last_time_ms = 0,
-    .player = .{ .x = 950.0, .y = 650.0, .direction = Direction.Down, .action = Action.Idle },
+    .player = .{
+        .position = .{ .x = 950.0, .y = 650.0 },
+        .movement_direction = .{ .x = 0, .y = 0 },
+        .view_direction = ViewDirection.Down,
+        .action = Action.Idle,
+        .dash_time_ms = 0,
+    },
 };
 
 pub fn update(inputs: struct {
-    time_ms: u32,
+    time_ms: u64,
     keyboard: struct {
         left: bool,
         right: bool,
         up: bool,
         down: bool,
         interact: bool,
+        dash: bool,
     },
     joystick: struct {
         x: f32,
         y: f32,
         interact: bool,
+        dash: bool,
     },
 }) !State {
     const delta_time: f32 = @as(f32, @floatFromInt(inputs.time_ms - state.last_time_ms)) / 1000.0;
 
     // Combine inputs from keyboard and joystick.
-    const direction_input = .{
+    const input_direction = .{
         .x = if (inputs.keyboard.left) -1.0 else if (inputs.keyboard.right) 1.0 else if (@abs(inputs.joystick.x) < config.controller_dead_zone) 0 else inputs.joystick.x,
         .y = if (inputs.keyboard.down) 1.0 else if (inputs.keyboard.up) -1.0 else if (@abs(inputs.joystick.y) < config.controller_dead_zone) 0 else inputs.joystick.y,
     };
     _ = inputs.keyboard; // HACK - Somehow if I don't have this then sometimes the keyboard inputs aren't registered.
     const interaction = inputs.keyboard.interact or inputs.joystick.interact;
-    const interaction_instant = !state.was_interacting and interaction;
+    const interaction_instant = interaction and !state.was_interacting;
+
+    const dash = inputs.keyboard.dash or inputs.joystick.dash;
+    const dash_instant = dash and !state.was_dashing;
 
     // Check proximity to machines.
     switch (state.player.action) {
         .Idle => {
+            if (dash_instant) {
+                state.player.dash_time_ms = inputs.time_ms;
+            }
+            const is_boosting = inputs.time_ms - state.player.dash_time_ms < config.player_dash_duration_ms;
+
+            if (!is_boosting) {
+                state.player.movement_direction = input_direction;
+            }
 
             // Move player.
-            state.player.x += direction_input.x * config.player_speed * delta_time;
-            state.player.y += direction_input.y * config.player_speed * delta_time;
-            state.player.direction = if (@abs(direction_input.x) > @abs(direction_input.y))
-                (if (direction_input.x < 0)
-                    Direction.Left
-                else if (direction_input.x > 0)
-                    Direction.Right
+            const speed = if (is_boosting) config.player_dash_speed else config.player_speed;
+            state.player.position.x += state.player.movement_direction.x * speed * delta_time;
+            state.player.position.y += state.player.movement_direction.y * speed * delta_time;
+            state.player.view_direction = if (@abs(input_direction.x) > @abs(input_direction.y))
+                (if (input_direction.x < 0)
+                    ViewDirection.Left
+                else if (input_direction.x > 0)
+                    ViewDirection.Right
                 else
-                    state.player.direction)
+                    state.player.view_direction)
             else
-                (if (direction_input.y < 0)
-                    Direction.Up
-                else if (direction_input.y > 0)
-                    Direction.Down
+                (if (input_direction.y < 0)
+                    ViewDirection.Up
+                else if (input_direction.y > 0)
+                    ViewDirection.Down
                 else
-                    state.player.direction);
+                    state.player.view_direction);
 
             if (interaction_instant) {
                 for (config.machine_locations) |machine| {
-                    const dx = state.player.x - machine.x;
-                    const dy = state.player.y - machine.y;
+                    const dx = state.player.position.x - machine.x;
+                    const dy = state.player.position.y - machine.y;
                     const distance = @sqrt(dx * dx + dy * dy);
                     if (distance < config.fix_proximity) {
                         // Start fixing machine!
                         state.player.action = .Fixing;
                         const interaction_flip: f32 = if (machine.x < config.screen.width / 2) 1.0 else -1.0;
-                        state.player.x = machine.x + config.fix_snap_offset.x * interaction_flip;
-                        state.player.y = machine.y + config.fix_snap_offset.y;
-                        state.player.direction = if (machine.x < state.player.x) Direction.Left else Direction.Right;
+                        state.player.position.x = machine.x + config.fix_snap_offset.x * interaction_flip;
+                        state.player.position.y = machine.y + config.fix_snap_offset.y;
+                        state.player.view_direction = if (machine.x < state.player.position.x) ViewDirection.Left else ViewDirection.Right;
                     }
                 }
             }
@@ -149,6 +183,7 @@ pub fn update(inputs: struct {
         },
     }
 
+    state.was_dashing = dash;
     state.was_interacting = interaction;
     state.last_time_ms = inputs.time_ms;
 

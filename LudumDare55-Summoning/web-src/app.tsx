@@ -25,7 +25,7 @@ export function App() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
     const [framerate, setFramerate] = useState(0);
-    let keyboard = { left: false, right: false, up: false, down: false, interact: false };
+    let keyboard = { left: false, right: false, up: false, down: false, interact: false, dash: false };
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
 
     useEffect(() => {
@@ -44,6 +44,8 @@ export function App() {
             ArrowRight: 'right',
             ArrowUp: 'up',
             ArrowDown: 'down',
+            ' ': 'interact',
+            Shift: 'dash',
         } as const;
         const keyHandler = (activate: boolean) => (event: KeyboardEvent) => {
             const key = eventKeyToKey[event.key as keyof typeof eventKeyToKey];
@@ -145,7 +147,8 @@ export function App() {
             fragSource: `
                 precision highp float;
                 void main(void) {
-                    gl_FragColor = texture2D(texture, (uv * sampleRect.zw + sampleRect.xy) / textureResolution);
+                    vec4 sampleColor = texture2D(texture, (uv * sampleRect.zw + sampleRect.xy) / textureResolution);
+                    gl_FragColor = vec4(sampleColor.rgb * sampleColor.a, sampleColor.a);
                 }
             `,
         });
@@ -162,7 +165,6 @@ export function App() {
             ])),
         };
         // Convert 1080p to window height
-        console.log(allResources);
         const renderScale = windowSize.height / allResources.config.screen.height;
         const world = {
             perspectiveMatrix: [
@@ -188,14 +190,14 @@ export function App() {
             gl.clear(gl.COLOR_BUFFER_BIT);
             gl.viewport(0, 0, windowSize.width, windowSize.height);
             gl.enable(gl.BLEND);
-            gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+            gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
         }
 
         function updateAndRender() {
             if (!gl)
                 return;
 
-            let joystick = { x: 0, y: 0, interact: false };
+            let joystick = { x: 0, y: 0, interact: false, dash: false};
             const gamepads = navigator.getGamepads();
             for (let i = 0; i < gamepads.length; i++) {
                 const gamepad = gamepads[i];
@@ -204,29 +206,31 @@ export function App() {
                         x: gamepad.axes[0],
                         y: gamepad.axes[1],
                         interact: gamepad.buttons[0].pressed,
+                        dash: gamepad.buttons[1].pressed,
                     };
                     break;
                 }
             }
 
-            const time = Date.now() - startTime;
-            const { player } = callWasm("update", {
+            const time = Date.now();
+            const result = callWasm("update", {
                 time_ms: time,
                 keyboard,
                 joystick,
             }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
+            const { player } = result;
 
             renderStaticSprite(background, { x: 0, y: 0 }, { x: 0, y: 0 });
             allResources.config.machine_locations.forEach((location) =>
                 renderStaticSprite(machine, { x: allResources.graphics.machine.width / 2, y: allResources.graphics.machine.height / 2 }, location));
             const currentAnimation = player.action == "Fixing"
                 ? ghost.fixing
-                : player.direction == "Up"
+                : player.view_direction == "Up"
                     ? ghost.idleBack
-                    : player.direction == "Down"
+                    : player.view_direction == "Down"
                         ? ghost.idleFront
                         : ghost.idleSide;
-            renderAnimation(currentAnimation, player, { x: player.direction == "Left" ? -1 : 1, y: 1 });
+            renderAnimation(currentAnimation, player.position, { x: player.view_direction == "Left" ? -1 : 1, y: 1 });
             renderAnimation(chamber, allResources.config.chamber_location, { x: 1, y: 1 });
         }
         let lastTime = Date.now();
