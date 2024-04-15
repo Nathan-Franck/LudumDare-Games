@@ -7,6 +7,7 @@ pub fn getAllResources() !struct {
         background: assets.PngImage,
         machine: assets.PngImage,
         chamber_increase: assets.SpriteSheetAnimation,
+        chamber_materialize: assets.SpriteSheetAnimation,
         ghost_idle_side: assets.SpriteSheetAnimation,
         ghost_idle_front: assets.SpriteSheetAnimation,
         ghost_idle_back: assets.SpriteSheetAnimation,
@@ -20,7 +21,8 @@ pub fn getAllResources() !struct {
         .graphics = .{
             .background = try assets.PngImage.load(allocator, "Summoning_0005_BG"),
             .machine = try assets.PngImage.load(allocator, "Summoning_0001_Machine"),
-            .chamber_increase = try assets.SpriteSheetAnimation.load(allocator, "SummoningChamber_FullHD_Materlalize "),
+            .chamber_increase = try assets.SpriteSheetAnimation.load(allocator, "SummoningChamber_FullHD_ChamberProgressIncrease"),
+            .chamber_materialize = try assets.SpriteSheetAnimation.load(allocator, "SummoningChamber_FullHD_Materlalize "),
             .ghost_idle_side = try assets.SpriteSheetAnimation.load(allocator, "Ghost_FullHD_IdleSide"),
             .ghost_idle_front = try assets.SpriteSheetAnimation.load(allocator, "Ghost_FullHD_IdleFront"),
             .ghost_idle_back = try assets.SpriteSheetAnimation.load(allocator, "Ghost_FullHD_IdleBack"),
@@ -41,19 +43,6 @@ const Action = enum {
     Fixing,
 };
 
-const State = struct {
-    was_interacting: bool,
-    was_dashing: bool,
-    last_time_ms: u64,
-    player: struct {
-        position: Point,
-        movement_direction: Point,
-        view_direction: ViewDirection,
-        action: Action,
-        dash_time_ms: u64,
-    },
-};
-
 const Point = struct { x: f32, y: f32 };
 
 const Config = struct {
@@ -65,6 +54,13 @@ const Config = struct {
     player_dash_speed: f32,
     player_dash_duration_ms: u64,
     player_dash_cooldown_ms: u64,
+    player_repair_delay_ms: u64,
+    levels: [4]struct {
+        title: []const u8,
+        duration_ms: u64,
+        breakdown_delay_ms: u64,
+        required_online: u32,
+    },
     fix_proximity: f32,
     fix_snap_offset: Point,
     chamber_location: Point,
@@ -80,8 +76,15 @@ const config: Config = .{
     .player_dash_speed = 1600,
     .player_dash_duration_ms = 200,
     .player_dash_cooldown_ms = 500,
+    .player_repair_delay_ms = 250,
+    .levels = .{
+        .{ .title = "Level 1 - Bring Me Back", .duration_ms = 1000 * 20, .breakdown_delay_ms = 1000 * 20, .required_online = 1 },
+        .{ .title = "Level 2 - Poor Reliability", .duration_ms = 1000 * 20, .breakdown_delay_ms = 1000 * 10, .required_online = 1 },
+        .{ .title = "Level 3 - We Need More Power", .duration_ms = 1000 * 30, .breakdown_delay_ms = 1000 * 10, .required_online = 2 },
+        .{ .title = "Level 4 - The Final Spawn", .duration_ms = 1000 * 40, .breakdown_delay_ms = 1000 * 8, .required_online = 3 },
+    },
     .fix_proximity = 200,
-    .fix_snap_offset = .{ .x = 180.0, .y = 0.0 },
+    .fix_snap_offset = .{ .x = 180.0, .y = 50.0 },
     .chamber_location = .{ .x = 950.0, .y = 300.0 },
     .machine_locations = .{
         .{ .x = 250, .y = 200 },
@@ -91,21 +94,98 @@ const config: Config = .{
     },
 };
 
-var state: State = .{
+const pseudo_random_list = [_]u64{
+    12329318230,
+    45658934597,
+    23423423423,
+    12705234855,
+    39057693473,
+    23423423423,
+    56897345879,
+    39466123480,
+    39482304849,
+    89516128347,
+    93293472340,
+    98324987234,
+    89234723489,
+    12346850175,
+    87123657458,
+    12346850175,
+    87123657458,
+};
+
+const MachineState = struct {
+    delay_until_breakdown_ms: u64,
+};
+
+const State = struct {
+    current_level: u32,
+    was_interacting: bool,
+    was_dashing: bool,
+    last_time_ms: ?u64,
+    chamber_progress: f32,
+    machine_states: [4]MachineState,
+    player: struct {
+        position: Point,
+        movement_direction: Point,
+        view_direction: ViewDirection,
+        action: Action,
+        target_machine_index: u32,
+        dash_time_ms: u64,
+        last_repair_time_ms: u64,
+    },
+};
+
+const first_level_state = .{
+    .current_level = 0,
     .was_interacting = false,
     .was_dashing = false,
-    .last_time_ms = 0,
+    .last_time_ms = null,
+    .chamber_progress = 0.0,
+    .machine_states = levelStateState(0),
     .player = .{
         .position = .{ .x = 950.0, .y = 650.0 },
         .movement_direction = .{ .x = 0, .y = 0 },
         .view_direction = ViewDirection.Down,
         .action = Action.Idle,
+        .target_machine_index = 0,
         .dash_time_ms = 0,
+        .last_repair_time_ms = 0,
     },
 };
+fn randomFromBreakdownDelay(breakdown_delay_ms: u64, random_number: u64) u64 {
+    return random_number % breakdown_delay_ms / 2 + breakdown_delay_ms / 2;
+}
+fn levelStateState(level: u32) [4]MachineState {
+    const level_config = config.levels[level];
+    var machine_states: [4]MachineState = undefined;
+    for (&machine_states, 0..) |*machine_state, i| {
+        machine_state.delay_until_breakdown_ms = randomFromBreakdownDelay(level_config.breakdown_delay_ms, level * config.levels.len + i);
+    }
+    return machine_states;
+}
+
+var state: State = first_level_state;
+
+fn repairMachineTick(time_ms: u64) void {
+    state.player.last_repair_time_ms = time_ms;
+
+    const target_machine_index = state.player.target_machine_index;
+    const breakdown_delay = config.levels[target_machine_index].breakdown_delay_ms;
+    const the_machine = &state.machine_states[target_machine_index];
+
+    // Machine breakdown delay APPROACHES (doesn't reach) the level's breakdown delay each tick.
+    the_machine.delay_until_breakdown_ms += @as(u64, @intFromFloat(@as(f32, @floatFromInt(breakdown_delay - the_machine.delay_until_breakdown_ms)) * 0.1));
+}
 
 pub fn update(inputs: struct {
     time_ms: u64,
+    joystick: struct {
+        x: f32,
+        y: f32,
+        interact: bool,
+        dash: bool,
+    },
     keyboard: struct {
         left: bool,
         right: bool,
@@ -114,14 +194,19 @@ pub fn update(inputs: struct {
         interact: bool,
         dash: bool,
     },
-    joystick: struct {
-        x: f32,
-        y: f32,
-        interact: bool,
-        dash: bool,
-    },
 }) !State {
-    const delta_time: f32 = @as(f32, @floatFromInt(inputs.time_ms - state.last_time_ms)) / 1000.0;
+    const delta_time: f32 = if (state.last_time_ms) |last_time_ms| @as(f32, @floatFromInt(inputs.time_ms - last_time_ms)) / 1000.0 else 0.0;
+
+    // Progress the chamber!
+    state.chamber_progress += delta_time * 1000.0 / @as(f32, @floatFromInt(config.levels[state.current_level].duration_ms));
+    if (state.chamber_progress >= 1) {
+        const next_level = state.current_level + 1;
+        state = first_level_state;
+        state.current_level = next_level;
+        state.machine_states = levelStateState(next_level);
+    }
+
+    // Degrade machines - these are what keep the chamber going.
 
     // Combine inputs from keyboard and joystick.
     const input_direction = .{
@@ -136,6 +221,9 @@ pub fn update(inputs: struct {
 
     switch (state.player.action) {
         .Fixing => {
+            if (inputs.time_ms - state.player.last_repair_time_ms > config.player_repair_delay_ms) {
+                repairMachineTick(inputs.time_ms);
+            }
             if (interaction_instant) {
                 state.player.action = .Idle;
             }
@@ -191,17 +279,19 @@ pub fn update(inputs: struct {
 
             if (interaction_instant) {
                 // Check proximity to machines.
-                for (config.machine_locations) |machine| {
-                    const dx = state.player.position.x - machine.x;
-                    const dy = state.player.position.y - machine.y;
+                for (config.machine_locations, 0..) |machine_location, machine_index| {
+                    const dx = state.player.position.x - machine_location.x;
+                    const dy = state.player.position.y - machine_location.y;
                     const distance = @sqrt(dx * dx + dy * dy);
                     if (distance < config.fix_proximity) {
                         // Start fixing machine!
                         state.player.action = .Fixing;
-                        const interaction_flip: f32 = if (machine.x < config.screen.width / 2) 1.0 else -1.0;
-                        state.player.position.x = machine.x + config.fix_snap_offset.x * interaction_flip;
-                        state.player.position.y = machine.y + config.fix_snap_offset.y;
-                        state.player.view_direction = if (machine.x < state.player.position.x) ViewDirection.Left else ViewDirection.Right;
+                        const interaction_flip: f32 = if (machine_location.x < config.screen.width / 2) 1.0 else -1.0;
+                        state.player.position.x = machine_location.x + config.fix_snap_offset.x * interaction_flip;
+                        state.player.position.y = machine_location.y + config.fix_snap_offset.y;
+                        state.player.view_direction = if (machine_location.x < state.player.position.x) ViewDirection.Left else ViewDirection.Right;
+                        state.player.target_machine_index = machine_index;
+                        repairMachineTick(inputs.time_ms);
                     }
                 }
             }

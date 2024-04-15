@@ -128,7 +128,7 @@ pub fn deepTypedArrayReferences(t: type, allocator: std.mem.Allocator, data: t) 
             break :blk new_data;
         },
         .Array => |a| blk: {
-            var elements: [a.len]a.child = undefined;
+            var elements: [a.len]DeepTypedArrayReferences(a.child).type = undefined;
             for (data, 0..) |elem, idx| {
                 elements[idx] = try deepTypedArrayReferences(a.child, allocator, elem);
             }

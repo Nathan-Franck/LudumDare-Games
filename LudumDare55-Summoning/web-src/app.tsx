@@ -1,10 +1,10 @@
 import { declareStyle } from './declareStyle';
 import { useEffect, useRef, useState } from 'preact/hooks'
-import { sliceToArray, callWasm } from './zigWasmInterface';
+import { sliceToArray, callWasm, sliceToString } from './zigWasmInterface';
 import { ShaderBuilder, Mat4, Vec2, Vec4 } from "./shaderBuilder";
 
 const { classes, encodedStyle } = declareStyle({
-    frameRate: {
+    devTool: {
         fontFamily: 'monospace',
         color: 'white',
     },
@@ -25,6 +25,9 @@ export function App() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
     const [framerate, setFramerate] = useState(0);
+    const [currentLevel, setCurrentLevel] = useState(0);
+    const [levelTitle, setLevelTitle] = useState("");
+
     let keyboard = { left: false, right: false, up: false, down: false, interact: false, dash: false };
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
 
@@ -104,15 +107,18 @@ export function App() {
             });
         }
 
-        function updateAnimation(animation: typeof ghost.idleSide) {
-            const frame_time = (Date.now() - startTime) / animation.animation_data.framerate;
+        function updateAnimation(animation: typeof ghost.idleSide, progress: number | null = null) {
+            const frame_time = progress == null
+                ? (Date.now() - startTime) / animation.animation_data.framerate
+                : progress * animation.animation_data.frames.length;
+            if (progress != null) console.log(progress);
             const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
             return animation.animation_data.frames[currentFrame];
         }
 
-        function renderAnimation(animation: typeof ghost.idleSide, spritePosition: { x: number, y: number }, spriteScale: { x: number, y: number }) {
+        function renderAnimation(animation: typeof ghost.idleSide, spritePosition: { x: number, y: number }, spriteScale: { x: number, y: number }, progress: number | null = null) {
             const gl2 = gl as WebGL2RenderingContext;
-            const currentFrameData = updateAnimation(animation);
+            const currentFrameData = updateAnimation(animation, progress);
             ShaderBuilder.renderMaterial(gl2, spriteMaterial, {
                 ...world,
                 ...animation,
@@ -181,7 +187,7 @@ export function App() {
             idleBack: loadAnimation(graphics.ghost_idle_back),
             fixing: loadAnimation(graphics.ghost_fixing),
         };
-        const chamber = loadAnimation(graphics.chamber_increase);
+        const chamber_increase = loadAnimation(graphics.chamber_increase);
         const background = loadStaticSprite(graphics.background);
         const machine = loadStaticSprite(graphics.machine);
 
@@ -219,14 +225,16 @@ export function App() {
                 joystick,
             }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
             const { player } = result;
+            setCurrentLevel(result.current_level);
+            setLevelTitle(sliceToString(allResources.config.levels[result.current_level].title));
 
             // Build a list of things to render.
             const thingsToRender: Array<
                 | { type: "sprite", sprite: typeof machine, origin: { x: number, y: number }, position: { x: number, y: number } }
-                | { type: "animation", animation: typeof ghost.idleSide, position: { x: number, y: number }, scale: { x: number, y: number } }
+                | { type: "animation", animation: typeof ghost.idleSide, position: { x: number, y: number }, scale: { x: number, y: number }, progress?: number}
             > = [
                 { type: "sprite", sprite: background, origin: { x: 0, y: 0 }, position: { x: 0, y: 0 } },
-                { type: "animation", animation: chamber, position: allResources.config.chamber_location, scale: { x: 1, y: 1 } },
+                { type: "animation", animation: chamber_increase, position: allResources.config.chamber_location, scale: { x: 1, y: 1 }, progress: result.chamber_progress },
                 {
                     type: "animation",
                     animation: player.action === "Fixing" ? ghost.fixing : player.view_direction === "Up" ? ghost.idleBack : player.view_direction === "Down" ? ghost.idleFront : ghost.idleSide,
@@ -246,7 +254,7 @@ export function App() {
                         renderStaticSprite(thing.sprite, thing.origin, thing.position);
                         break;
                     case "animation":
-                        renderAnimation(thing.animation, thing.position, thing.scale);
+                        renderAnimation(thing.animation, thing.position, thing.scale, thing.progress);
                         break;
                 }
             });
@@ -274,7 +282,9 @@ export function App() {
 
     return (
         <>
-            <div class={classes.frameRate}>Frame Rate: {framerate}</div>
+            <div class={classes.devTool}>Frame Rate: {framerate}</div>
+            <div class={classes.devTool}>Current Level: {currentLevel}</div>
+            <div class={classes.devTool}>Level Title: {levelTitle}</div>
             <style>{encodedStyle}</style>
             <canvas ref={canvasRef} class={classes.canvas} id="canvas" width={windowSize.width} height={windowSize.height}></canvas>
         </>
