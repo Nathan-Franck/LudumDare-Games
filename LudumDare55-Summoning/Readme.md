@@ -26,7 +26,12 @@ bun run dev
 # Architecture
 
 * Zig in the backend running the game state machine, passes concrete data about the current state of the game to the front-end to display.
+  * [./src/game.zig](./src/game.zig) Contains all game logic, as well as packing in all of the game's assets (images) into the wasm bundle
+  * [./src/type_definitions.zig](./src/type_definitions.zig) Generates a Typescript d.ts file that communicates the exact JSON structure being sent from the back-end to the front-end
+  * [./src/wasm_entry.zig](./src/wasm_entry.zig) Recieves and provides JSON from the front-end, while sending slice data for really large data chunks (image data)
 * React frontend reads in state data and displays to user, passes back input events from the user to the backend game state machine to update.
+  * [./web-src/shaderBuilder.ts](./web-src/shaderBuilder.ts) Wraps WebGL complexity in a typesafe wrapper, making refactoring names and providing proper data types easy
+  * [./web-src/app.tsx](./web-src/app.tsx) Contains the Game's graphics as well as a full implementation of the EaselJS spritesheet animation JSON standard for the game's sprites
 
 # Game Design
 * 4 Machines are working on a summoning
