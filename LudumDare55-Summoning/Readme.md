@@ -1,8 +1,8 @@
 # Ludum Dare 55 - Summoning
 
 Game is Published!
-* (Ludum Dare Game Jam)[https://ldjam.com/events/ludum-dare/55/soul-technician]
-* (Itch.io)[https://nathan-franck.itch.io/ludum-dare-55]
+* [Ludum Dare Game Jam](https://ldjam.com/events/ludum-dare/55/soul-technician)
+* [Itch.io](https://nathan-franck.itch.io/ludum-dare-55)
 
 ![Gameplay Screenshot](./gameplay_screenshot.png)
 
