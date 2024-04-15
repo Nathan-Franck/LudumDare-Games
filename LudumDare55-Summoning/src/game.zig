@@ -83,9 +83,9 @@ const config: Config = .{
     .player_repair_delay_ms = 250,
     .levels = .{
         .{ .title = "Level 1 - Bring Me Back", .duration_ms = 1000 * 5, .breakdown_delay_ms = 1000 * 30, .required_online = 1 },
-        .{ .title = "Level 2 - Poor Reliability", .duration_ms = 1000 * 20, .breakdown_delay_ms = 1000 * 10, .required_online = 1 },
-        .{ .title = "Level 3 - We Need More Power", .duration_ms = 1000 * 30, .breakdown_delay_ms = 1000 * 10, .required_online = 2 },
-        .{ .title = "Level 4 - The Final Spawn", .duration_ms = 1000 * 40, .breakdown_delay_ms = 1000 * 8, .required_online = 3 },
+        .{ .title = "Level 2 - Poor Reliability", .duration_ms = 1000 * 20, .breakdown_delay_ms = 1000 * 15, .required_online = 1 },
+        .{ .title = "Level 3 - We Need More Power", .duration_ms = 1000 * 30, .breakdown_delay_ms = 1000 * 15, .required_online = 2 },
+        .{ .title = "Level 4 - The Final Spawn", .duration_ms = 1000 * 40, .breakdown_delay_ms = 1000 * 12, .required_online = 2 },
     },
     .fix_proximity = 200,
     .fix_snap_offset = .{ .x = 180.0, .y = 50.0 },
@@ -124,6 +124,7 @@ const MachineState = struct {
 };
 
 const State = struct {
+    win_time_ms: ?u64,
     in_danger: bool,
     current_level: u32,
     level_start_time_ms: u64,
@@ -146,6 +147,7 @@ const State = struct {
 };
 
 const first_level_state = .{
+    .win_time_ms = null,
     .in_danger = false,
     .current_level = 0,
     .level_start_time_ms = 0,
@@ -210,9 +212,18 @@ pub fn update(inputs: struct {
         dash: bool,
     },
 }) !State {
+    if (state.win_time_ms) |win_time_ms| {
+        _ = win_time_ms; // autofix
+        return state;
+    }
+
     if (state.victory_time_ms) |victory_time_ms| {
         if (inputs.time_ms - victory_time_ms > config.victory_span_ms) {
             const next_level = state.current_level;
+            if (next_level >= config.levels.len - 1) {
+                state.win_time_ms = inputs.time_ms;
+                return state;
+            }
             state = first_level_state;
             state.current_level = next_level;
             state.level_start_time_ms = inputs.time_ms;
@@ -284,7 +295,7 @@ pub fn update(inputs: struct {
             if (inputs.time_ms - state.player.last_repair_time_ms > config.player_repair_delay_ms) {
                 repairMachineTick(inputs.time_ms);
             }
-            if (interaction_instant) {
+            if (interaction_instant or dash_instant) {
                 state.player.action = .Idle;
             }
         },

@@ -16,6 +16,13 @@ const userMessage = {
 } as const;
 
 const { classes, encodedStyle } = declareStyle({
+    container: {
+        margin: 0,
+        padding: 0,
+        width: '100%',
+        height: '100%',
+        overflow: 'hidden',
+    },
     devTool: {
         fontFamily: 'monospace',
         color: 'white',
@@ -27,6 +34,10 @@ const { classes, encodedStyle } = declareStyle({
         left: 0,
         top: 0,
         zIndex: -1,
+    },
+    levelMessage: {
+        ...userMessage,
+        color: 'white',
     },
     dangerMessage: {
         ...userMessage,
@@ -45,13 +56,12 @@ export function App() {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
     const [framerate, setFramerate] = useState(0);
-    const [currentLevel, setCurrentLevel] = useState(0);
-    const [levelTitle, setLevelTitle] = useState("");
     const [inDanger, setInDanger] = useState(false);
     const [fail, setFail] = useState(false);
+    const [win, setWin] = useState(false);
     const [success, setSuccess] = useState(false);
-    const [machineTimes, setMachineTimes] = useState([0, 0, 0, 0]);
     const [machinesBroken, setMachinesBroken] = useState([false, false, false, false]);
+    const [levelTitle, setLevelTitle] = useState(null as string | null);
 
     let keyboard = { left: false, right: false, up: false, down: false, interact: false, dash: false };
     const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -79,6 +89,7 @@ export function App() {
             const key = eventKeyToKey[event.key as keyof typeof eventKeyToKey];
             if (key) {
                 keyboard = { ...keyboard, [key]: activate };
+                event.preventDefault();
             }
         };
         const keyHandlers = { down: keyHandler(true), up: keyHandler(false) };
@@ -133,11 +144,9 @@ export function App() {
         }
 
         function updateAnimation(animation: typeof ghost.idleSide, progress: number | null = null) {
-            const frame_time = progress == null
-                ? (Date.now() - startTime) / animation.animation_data.framerate
-                : Math.min(Math.max(progress, 0), 1) * animation.animation_data.frames.length;
-            if (progress != null) console.log(progress);
-            const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
+            const currentFrame = progress == null
+                ? Math.floor((Date.now() - startTime) / animation.animation_data.framerate) % animation.animation_data.frames.length
+                : Math.min(Math.max(Math.floor(progress * animation.animation_data.frames.length), 0), animation.animation_data.frames.length - 1);
             return animation.animation_data.frames[currentFrame];
         }
 
@@ -274,12 +283,12 @@ export function App() {
                 joystick,
             }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
             const { player } = state;
-            setCurrentLevel(state.current_level);
-            setLevelTitle(sliceToString(allResources.config.levels[state.current_level].title));
+            if (state.current_level < allResources.config.levels.length)
+                setLevelTitle((time - state.level_start_time_ms) < 2000 ? sliceToString(allResources.config.levels[state.current_level].title) : null);
             setInDanger(state.in_danger);
+            setWin(state.win_time_ms != null);
             setFail(state.fail_time_ms != null);
             setSuccess(state.victory_time_ms != null);
-            setMachineTimes(state.machine_states.map((machine) => machine.delay_until_breakdown_ms));
             setMachinesBroken(state.machine_states.map((machine) => machine.broken));
 
             // Build a list of things to render.
@@ -324,8 +333,17 @@ export function App() {
                 ShaderBuilder.renderMaterial(gl, overlayMaterial, {
                     ...world,
                     ...spriteMesh,
-                    dimensions: [windowSize.width, windowSize.height] as Vec2,
+                    dimensions: [1920, 1080] as Vec2,
                     color: [0, 0, 0, Math.min((time - state.fail_time_ms) / allResources.config.fail_span_ms, 1)],
+                });
+            }
+            // Overlay fade to black on win
+            if (state.win_time_ms != null) {
+                ShaderBuilder.renderMaterial(gl, overlayMaterial, {
+                    ...world,
+                    ...spriteMesh,
+                    dimensions: [1920, 1080] as Vec2,
+                    color: [0, 0, 0, Math.min((time - state.win_time_ms) / allResources.config.victory_span_ms, 1)],
                 });
             }
             // Overlay flash from white on level start
@@ -334,7 +352,7 @@ export function App() {
                 ShaderBuilder.renderMaterial(gl, overlayMaterial, {
                     ...world,
                     ...spriteMesh,
-                    dimensions: [windowSize.width, windowSize.height] as Vec2,
+                    dimensions: [1920, 1080] as Vec2,
                     color: [1, 1, 1, flash_value],
                 });
             }
@@ -361,19 +379,17 @@ export function App() {
     }, [canvasRef, windowSize]);
 
     return (
-        <>
+        <div class={classes.container}>
             <div class={classes.devTool}>Frame Rate: {framerate}</div>
-            <div class={classes.devTool}>Current Level: {currentLevel}</div>
-            <div class={classes.devTool}>Level Title: {levelTitle}</div>
-            <div class={classes.devTool}>In Danger: {inDanger ? "Yes" : "No"}</div>
-            <div class={classes.devTool}>Machine Times: {machineTimes.join(", ")}</div>
-            {success ? <div class={classes.successMessage}>{"Summoning Succeeded!"}</div>
-                : fail ? <div class={classes.dangerMessage}>{"Summoning failed, please try again."}</div>
-                    : inDanger ? <div class={classes.dangerMessage}>{"DANGER! MACHINES MUST BE KEPT ONLINE!"}</div> : null}
+            {win ?<div class={classes.levelMessage}>Summoning Succeeded! <div>Game by Nathan Franck and Oscar Romero</div></div>
+            : success ? <div class={classes.successMessage}>Summoning Succeeded!</div>
+                : fail ? <div class={classes.dangerMessage}>Summoning failed, please try again.</div>
+                    : inDanger ? <div class={classes.dangerMessage}>DANGER! MACHINES MUST BE KEPT ONLINE!</div> : null}
             {success ? null : machinesBroken.map((broken, index) => broken ? <div class={classes.dangerMessage} style={{
-                left: `${allResources.config.machine_locations[index].x / canvasRef.current!.width * 100}%`,
-                top: `${allResources.config.machine_locations[index].y / canvasRef.current!.height * 100}%`,
+                left: `${allResources.config.machine_locations[index].x / 1920 * 100}%`,
+                top: `${allResources.config.machine_locations[index].y / 1080 * 100}%`,
             }}>{"!!! MACHINE BROKEN !!!"}</div> : null)}
+            {levelTitle != null ? <div class={classes.levelMessage}>{levelTitle}</div> : null}
             <style>{`
                 @keyframes rotationalPunch {
                     0% { transform: translate(-50%, -50%) rotate(0deg); }
@@ -386,11 +402,7 @@ export function App() {
                     40% { transform: translate(-50%, -50%) rotate(0deg); }
                 }
             `}{encodedStyle}</style>
-            {machinesBroken.map((broken, index) => broken ? <div class={classes.dangerMessage} style={{
-                left: `${allResources.config.machine_locations[index].x / canvasRef.current!.width * 100}%`,
-                top: `${allResources.config.machine_locations[index].y / canvasRef.current!.height * 100}%`,
-            }}>{"!!! MACHINE BROKEN !!!"}</div> : null)}
             <canvas ref={canvasRef} class={classes.canvas} id="canvas" width={windowSize.width} height={windowSize.height}></canvas>
-        </>
+        </div>
     )
 }
