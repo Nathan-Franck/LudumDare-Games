@@ -48,6 +48,8 @@ const Point = struct { x: f32, y: f32 };
 const Config = struct {
     screen: struct { width: u32, height: u32 },
     controller_dead_zone: f32,
+    victory_span_ms: u64,
+    fail_span_ms: u64,
     player_radius: f32,
     player_speed: f32,
     player_direction_smoothness: f32,
@@ -70,6 +72,8 @@ const Config = struct {
 const config: Config = .{
     .screen = .{ .width = 1920, .height = 1080 },
     .controller_dead_zone = 0.1,
+    .victory_span_ms = 1000 * 5,
+    .fail_span_ms = 1000 * 5,
     .player_radius = 50.0,
     .player_speed = 400,
     .player_direction_smoothness = 5,
@@ -78,7 +82,7 @@ const config: Config = .{
     .player_dash_cooldown_ms = 500,
     .player_repair_delay_ms = 250,
     .levels = .{
-        .{ .title = "Level 1 - Bring Me Back", .duration_ms = 1000 * 20, .breakdown_delay_ms = 1000 * 5, .required_online = 1 },
+        .{ .title = "Level 1 - Bring Me Back", .duration_ms = 1000 * 5, .breakdown_delay_ms = 1000 * 30, .required_online = 1 },
         .{ .title = "Level 2 - Poor Reliability", .duration_ms = 1000 * 20, .breakdown_delay_ms = 1000 * 10, .required_online = 1 },
         .{ .title = "Level 3 - We Need More Power", .duration_ms = 1000 * 30, .breakdown_delay_ms = 1000 * 10, .required_online = 2 },
         .{ .title = "Level 4 - The Final Spawn", .duration_ms = 1000 * 40, .breakdown_delay_ms = 1000 * 8, .required_online = 3 },
@@ -120,14 +124,16 @@ const MachineState = struct {
 };
 
 const State = struct {
-    user_message: ?[]const u8,
     in_danger: bool,
     current_level: u32,
+    level_start_time_ms: u64,
     was_interacting: bool,
     was_dashing: bool,
     last_time_ms: ?u64,
     chamber_progress: f32,
     machine_states: [4]MachineState,
+    victory_time_ms: ?u64,
+    fail_time_ms: ?u64,
     player: struct {
         position: Point,
         movement_direction: Point,
@@ -140,14 +146,16 @@ const State = struct {
 };
 
 const first_level_state = .{
-    .user_message = null,
     .in_danger = false,
     .current_level = 0,
+    .level_start_time_ms = 0,
     .was_interacting = false,
     .was_dashing = false,
     .last_time_ms = null,
     .chamber_progress = 0.0,
     .machine_states = levelStateState(0),
+    .victory_time_ms = null,
+    .fail_time_ms = null,
     .player = .{
         .position = .{ .x = 950.0, .y = 650.0 },
         .movement_direction = .{ .x = 0, .y = 0 },
@@ -202,15 +210,38 @@ pub fn update(inputs: struct {
         dash: bool,
     },
 }) !State {
+    if (state.victory_time_ms) |victory_time_ms| {
+        if (inputs.time_ms - victory_time_ms > config.victory_span_ms) {
+            const next_level = state.current_level;
+            state = first_level_state;
+            state.current_level = next_level;
+            state.level_start_time_ms = inputs.time_ms;
+            state.machine_states = levelStateState(state.current_level);
+        } else {
+            return state;
+        }
+    }
+
+    if (state.fail_time_ms) |fail_time_ms| {
+        if (inputs.time_ms - fail_time_ms > config.fail_span_ms) {
+            const next_level = state.current_level;
+            state = first_level_state;
+            state.current_level = next_level;
+            state.level_start_time_ms = inputs.time_ms;
+            state.machine_states = levelStateState(state.current_level);
+        } else {
+            return state;
+        }
+    }
+
     const delta_time: f32 = if (state.last_time_ms) |last_time_ms| @as(f32, @floatFromInt(inputs.time_ms - last_time_ms)) / 1000.0 else 0.0;
 
     // Progress the chamber!
     state.chamber_progress += delta_time * 1000.0 / @as(f32, @floatFromInt(config.levels[state.current_level].duration_ms));
     if (state.chamber_progress >= 1) {
         const next_level = state.current_level + 1;
-        state = first_level_state;
         state.current_level = next_level;
-        state.machine_states = levelStateState(next_level);
+        state.victory_time_ms = inputs.time_ms;
     }
 
     // Degrade machines - these are what keep the chamber going.
@@ -232,9 +263,9 @@ pub fn update(inputs: struct {
 
     // If too many machines are currently broken, the chamber will stop.
     if (currently_online < config.levels[state.current_level].required_online) {
-        state.chamber_progress = 0.0;
-        state.user_message = "Not enough machines are online!";
-        state.machine_states = levelStateState(state.current_level);
+        const next_level = state.current_level;
+        state.current_level = next_level;
+        state.fail_time_ms = inputs.time_ms;
     }
 
     // Combine inputs from keyboard and joystick.

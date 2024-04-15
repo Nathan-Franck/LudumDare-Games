@@ -3,6 +3,18 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { sliceToArray, callWasm, sliceToString } from './zigWasmInterface';
 import { ShaderBuilder, Mat4, Vec2, Vec4 } from "./shaderBuilder";
 
+const userMessage = {
+    fontFamily: 'monospace',
+    fontSize: '2em',
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    animation: 'rotationalPunch 4s',
+} as const;
+
 const { classes, encodedStyle } = declareStyle({
     devTool: {
         fontFamily: 'monospace',
@@ -17,18 +29,12 @@ const { classes, encodedStyle } = declareStyle({
         zIndex: -1,
     },
     dangerMessage: {
+        ...userMessage,
         color: 'red',
-        fontFamily: 'monospace',
-        fontSize: '2em',
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        // ensure they don't affect the window
-        overflow: 'hidden',
-        whiteSpace: 'nowrap',
-
-        animation: 'rotationalPunch 4s',
+    },
+    successMessage: {
+        ...userMessage,
+        color: 'green',
     },
 });
 
@@ -42,6 +48,8 @@ export function App() {
     const [currentLevel, setCurrentLevel] = useState(0);
     const [levelTitle, setLevelTitle] = useState("");
     const [inDanger, setInDanger] = useState(false);
+    const [fail, setFail] = useState(false);
+    const [success, setSuccess] = useState(false);
     const [machineTimes, setMachineTimes] = useState([0, 0, 0, 0]);
     const [machinesBroken, setMachinesBroken] = useState([false, false, false, false]);
 
@@ -94,7 +102,7 @@ export function App() {
 
         function loadStaticSprite(sprite: typeof graphics.background) {
             return {
-                ...sprite_mesh,
+                ...spriteMesh,
                 texture: ShaderBuilder.loadImageData(gl as WebGL2RenderingContext, sliceToArray.Uint8Array(sprite.data), sprite.width, sprite.height),
                 textureResolution: [sprite.width, sprite.height] as Vec2,
                 sampleRect: [0, 0, sprite.width, sprite.height] as Vec4,
@@ -104,7 +112,7 @@ export function App() {
         function loadAnimation(animation: typeof allResources.graphics.chamber_increase) {
             const spriteSheet = animation.sprite_sheet;
             return {
-                ...sprite_mesh,
+                ...spriteMesh,
                 texture: ShaderBuilder.loadImageData(gl as WebGL2RenderingContext, sliceToArray.Uint8Array(spriteSheet.data), spriteSheet.width, spriteSheet.height),
                 textureResolution: [spriteSheet.width, spriteSheet.height] as Vec2,
                 animation_data: animation.animation_data,
@@ -127,7 +135,7 @@ export function App() {
         function updateAnimation(animation: typeof ghost.idleSide, progress: number | null = null) {
             const frame_time = progress == null
                 ? (Date.now() - startTime) / animation.animation_data.framerate
-                : progress * animation.animation_data.frames.length;
+                : Math.min(Math.max(progress, 0), 1) * animation.animation_data.frames.length;
             if (progress != null) console.log(progress);
             const currentFrame = Math.floor(frame_time) % animation.animation_data.frames.length;
             return animation.animation_data.frames[currentFrame];
@@ -175,7 +183,30 @@ export function App() {
                 }
             `,
         });
-        const sprite_mesh = {
+        // Flat color blended overtop of previously rendered
+        var overlayMaterial = ShaderBuilder.generateMaterial(gl, {
+            mode: 'TRIANGLES',
+            globals: {
+                meshTriangle: { type: "element" },
+                dimensions: { type: "uniform", unit: "vec2", count: 1 },
+                meshVertexUV: { type: "attribute", unit: "vec2" },
+                perspectiveMatrix: { type: "uniform", unit: "mat4", count: 1 },
+                color: { type: "uniform", unit: "vec4", count: 1 },
+            },
+            vertSource: `
+                precision highp float;
+                void main(void) {
+                    gl_Position = perspectiveMatrix * vec4(meshVertexUV * dimensions, 0, 1);
+                }
+            `,
+            fragSource: `
+                precision highp float;
+                void main(void) {
+                    gl_FragColor = vec4(color.rgb * color.a, color.a);
+                }
+            `,
+        });
+        const spriteMesh = {
             meshTriangle: ShaderBuilder.createElementBuffer(gl, new Uint16Array([
                 0, 1, 2,
                 0, 2, 3
@@ -205,6 +236,7 @@ export function App() {
             fixing: loadAnimation(graphics.ghost_fixing),
         };
         const chamber_increase = loadAnimation(graphics.chamber_increase);
+        const chamber_materialize = loadAnimation(graphics.chamber_materialize);
         const background = loadStaticSprite(graphics.background);
         const machine = loadStaticSprite(graphics.machine);
 
@@ -245,6 +277,8 @@ export function App() {
             setCurrentLevel(state.current_level);
             setLevelTitle(sliceToString(allResources.config.levels[state.current_level].title));
             setInDanger(state.in_danger);
+            setFail(state.fail_time_ms != null);
+            setSuccess(state.victory_time_ms != null);
             setMachineTimes(state.machine_states.map((machine) => machine.delay_until_breakdown_ms));
             setMachinesBroken(state.machine_states.map((machine) => machine.broken));
 
@@ -254,7 +288,13 @@ export function App() {
                 | { type: "animation", animation: typeof ghost.idleSide, position: { x: number, y: number }, scale: { x: number, y: number }, progress?: number }
             > = [
                     { type: "sprite", sprite: background, origin: { x: 0, y: 0 }, position: { x: 0, y: 0 } },
-                    { type: "animation", animation: chamber_increase, position: allResources.config.chamber_location, scale: { x: 1, y: 1 }, progress: state.chamber_progress },
+                    {
+                        type: "animation", position: allResources.config.chamber_location, scale: { x: 1, y: 1 }, ...(
+                            state.victory_time_ms != null
+                                ? { animation: chamber_materialize, progress: (time - state.victory_time_ms) / allResources.config.victory_span_ms }
+                                : { animation: chamber_increase, progress: state.chamber_progress }
+                        )
+                    },
                     {
                         type: "animation",
                         animation: player.action === "Fixing" ? ghost.fixing : player.view_direction === "Up" ? ghost.idleBack : player.view_direction === "Down" ? ghost.idleFront : ghost.idleSide,
@@ -278,6 +318,26 @@ export function App() {
                         break;
                 }
             });
+
+            // Overlay fade to black on fail
+            if (state.fail_time_ms != null) {
+                ShaderBuilder.renderMaterial(gl, overlayMaterial, {
+                    ...world,
+                    ...spriteMesh,
+                    dimensions: [windowSize.width, windowSize.height] as Vec2,
+                    color: [0, 0, 0, Math.min((time - state.fail_time_ms) / allResources.config.fail_span_ms, 1)],
+                });
+            }
+            // Overlay flash from white on level start
+            const flash_value = Math.min(1 - (time - state.level_start_time_ms) / 100, 1);
+            if (flash_value > 0) {
+                ShaderBuilder.renderMaterial(gl, overlayMaterial, {
+                    ...world,
+                    ...spriteMesh,
+                    dimensions: [windowSize.width, windowSize.height] as Vec2,
+                    color: [1, 1, 1, flash_value],
+                });
+            }
         }
         let lastTime = Date.now();
         let frameCount = 0;
@@ -307,7 +367,13 @@ export function App() {
             <div class={classes.devTool}>Level Title: {levelTitle}</div>
             <div class={classes.devTool}>In Danger: {inDanger ? "Yes" : "No"}</div>
             <div class={classes.devTool}>Machine Times: {machineTimes.join(", ")}</div>
-            { inDanger ? <div class={classes.dangerMessage}>{"DANGER! MACHINES MUST BE KEPT ONLINE!"}</div> : null }
+            {success ? <div class={classes.successMessage}>{"Summoning Succeeded!"}</div>
+                : fail ? <div class={classes.dangerMessage}>{"Summoning failed, please try again."}</div>
+                    : inDanger ? <div class={classes.dangerMessage}>{"DANGER! MACHINES MUST BE KEPT ONLINE!"}</div> : null}
+            {success ? null : machinesBroken.map((broken, index) => broken ? <div class={classes.dangerMessage} style={{
+                left: `${allResources.config.machine_locations[index].x / canvasRef.current!.width * 100}%`,
+                top: `${allResources.config.machine_locations[index].y / canvasRef.current!.height * 100}%`,
+            }}>{"!!! MACHINE BROKEN !!!"}</div> : null)}
             <style>{`
                 @keyframes rotationalPunch {
                     0% { transform: translate(-50%, -50%) rotate(0deg); }
