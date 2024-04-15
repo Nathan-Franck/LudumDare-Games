@@ -1,5 +1,7 @@
 # Ludum Dare 55 - Summoning
 
+![Gameplay Screenshot](./gameplay_screenshot.png)
+
 # Development Environment
 
 * Install VSCode - https://code.visualstudio.com/download
