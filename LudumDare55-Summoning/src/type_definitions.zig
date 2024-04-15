@@ -100,7 +100,7 @@ pub inline fn typescriptTypeOf(comptime from_type: anytype, comptime options: st
 /// * Int8Array
 /// * Int16Array
 /// * Int32Array
-/// * NOT Uint8Array - since in Zig this is put aside for strings
+/// * Uint8Array - This is tricky, since in Zig this is put aside for strings... and most likely we don't want to obfuscate strings in JSON 
 pub fn deepTypedArrayReferences(t: type, allocator: std.mem.Allocator, data: t) !DeepTypedArrayReferences(t).type {
     if (!DeepTypedArrayReferences(t).changed) {
         return data;
