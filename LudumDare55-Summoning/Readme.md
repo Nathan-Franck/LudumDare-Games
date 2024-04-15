@@ -21,6 +21,7 @@ Game is Published!
 From the command line:
 ```
 zig build wasm
+zig run ./src/tool_game_build_type_definitions.zig
 bun run dev
 ```
 > You should be able to ctrl+click the link to open up the URL to the game!
