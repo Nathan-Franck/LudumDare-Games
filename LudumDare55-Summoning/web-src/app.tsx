@@ -197,7 +197,7 @@ export function App() {
             if (!gl)
                 return;
 
-            let joystick = { x: 0, y: 0, interact: false, dash: false};
+            let joystick = { x: 0, y: 0, interact: false, dash: false };
             const gamepads = navigator.getGamepads();
             for (let i = 0; i < gamepads.length; i++) {
                 const gamepad = gamepads[i];
@@ -220,18 +220,36 @@ export function App() {
             }) as Exclude<ReturnType<typeof callWasm<"update">>, { "error": any }>;
             const { player } = result;
 
-            renderStaticSprite(background, { x: 0, y: 0 }, { x: 0, y: 0 });
-            allResources.config.machine_locations.forEach((location) =>
-                renderStaticSprite(machine, { x: allResources.graphics.machine.width / 2, y: allResources.graphics.machine.height / 2 }, location));
-            const currentAnimation = player.action == "Fixing"
-                ? ghost.fixing
-                : player.view_direction == "Up"
-                    ? ghost.idleBack
-                    : player.view_direction == "Down"
-                        ? ghost.idleFront
-                        : ghost.idleSide;
-            renderAnimation(currentAnimation, player.position, { x: player.view_direction == "Left" ? -1 : 1, y: 1 });
-            renderAnimation(chamber, allResources.config.chamber_location, { x: 1, y: 1 });
+            // Build a list of things to render.
+            const thingsToRender: Array<
+                | { type: "sprite", sprite: typeof machine, origin: { x: number, y: number }, position: { x: number, y: number } }
+                | { type: "animation", animation: typeof ghost.idleSide, position: { x: number, y: number }, scale: { x: number, y: number } }
+            > = [
+                { type: "sprite", sprite: background, origin: { x: 0, y: 0 }, position: { x: 0, y: 0 } },
+                {
+                    type: "animation",
+                    animation: player.action === "Fixing" ? ghost.fixing : player.view_direction === "Up" ? ghost.idleBack : player.view_direction === "Down" ? ghost.idleFront : ghost.idleSide,
+                    position: player.position,
+                    scale: { x: player.view_direction === "Left" ? -1 : 1, y: 1 },
+                },
+                { type: "animation", animation: chamber, position: allResources.config.chamber_location, scale: { x: 1, y: 1 } },
+                ...allResources.config.machine_locations.map((location) => ({ type: "sprite" as const, sprite: machine, origin: { x: graphics.machine.width / 2, y: graphics.machine.height / 2 }, position: location })),
+            ];
+
+            // Sort by y position.
+            thingsToRender.sort((a, b) => a.position.y - b.position.y);
+
+            // Render the things!
+            thingsToRender.forEach((thing) => {
+                switch (thing.type) {
+                    case "sprite":
+                        renderStaticSprite(thing.sprite, thing.origin, thing.position);
+                        break;
+                    case "animation":
+                        renderAnimation(thing.animation, thing.position, thing.scale);
+                        break;
+                }
+            });
         }
         let lastTime = Date.now();
         let frameCount = 0;

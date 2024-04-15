@@ -59,7 +59,9 @@ const Point = struct { x: f32, y: f32 };
 const Config = struct {
     screen: struct { width: u32, height: u32 },
     controller_dead_zone: f32,
+    player_radius: f32,
     player_speed: f32,
+    player_direction_smoothness: f32,
     player_dash_speed: f32,
     player_dash_duration_ms: u64,
     player_dash_cooldown_ms: u64,
@@ -72,8 +74,10 @@ const Config = struct {
 const config: Config = .{
     .screen = .{ .width = 1920, .height = 1080 },
     .controller_dead_zone = 0.1,
+    .player_radius = 50.0,
     .player_speed = 400,
-    .player_dash_speed = 800,
+    .player_direction_smoothness = 5,
+    .player_dash_speed = 1600,
     .player_dash_duration_ms = 200,
     .player_dash_cooldown_ms = 500,
     .fix_proximity = 200,
@@ -139,7 +143,16 @@ pub fn update(inputs: struct {
             const is_boosting = inputs.time_ms - state.player.dash_time_ms < config.player_dash_duration_ms;
 
             if (!is_boosting) {
-                state.player.movement_direction = input_direction;
+                // Smooth movement direction.
+                const d_x = input_direction.x - state.player.movement_direction.x;
+                const d_y = input_direction.y - state.player.movement_direction.y;
+                const distance = @sqrt(d_x * d_x + d_y * d_y);
+                const n_x = if (@abs(distance) > 0) d_x / distance else 0;
+                const n_y = if (@abs(distance) > 0) d_y / distance else 0;
+                const v_x = n_x * config.player_direction_smoothness * delta_time;
+                const v_y = n_y * config.player_direction_smoothness * delta_time;
+                state.player.movement_direction.x = if (@abs(d_x) < @abs(v_x)) input_direction.x else state.player.movement_direction.x + v_x;
+                state.player.movement_direction.y = if (@abs(d_y) < @abs(v_y)) input_direction.y else state.player.movement_direction.y + v_y;
             }
 
             // Move player.
@@ -183,6 +196,10 @@ pub fn update(inputs: struct {
             }
         },
     }
+
+    // Constrain player to screen.
+    state.player.position.x = @max(config.player_radius, @min(config.screen.width - config.player_radius, state.player.position.x));
+    state.player.position.y = @max(config.player_radius, @min(config.screen.height - config.player_radius, state.player.position.y));
 
     state.was_dashing = dash;
     state.was_interacting = interaction;
