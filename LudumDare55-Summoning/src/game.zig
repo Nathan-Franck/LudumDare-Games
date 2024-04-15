@@ -134,16 +134,20 @@ pub fn update(inputs: struct {
     const dash = inputs.keyboard.dash or inputs.joystick.dash;
     const dash_instant = dash and !state.was_dashing;
 
-    // Check proximity to machines.
     switch (state.player.action) {
+        .Fixing => {
+            if (interaction_instant) {
+                state.player.action = .Idle;
+            }
+        },
         .Idle => {
-            if (dash_instant) {
+            if (dash_instant and inputs.time_ms - state.player.dash_time_ms > config.player_dash_cooldown_ms) {
                 state.player.dash_time_ms = inputs.time_ms;
             }
             const is_boosting = inputs.time_ms - state.player.dash_time_ms < config.player_dash_duration_ms;
 
             if (!is_boosting) {
-                // Smooth movement direction.
+                // Smooth movement direction for normal movement.
                 const d_x = input_direction.x - state.player.movement_direction.x;
                 const d_y = input_direction.y - state.player.movement_direction.y;
                 const distance = @sqrt(d_x * d_x + d_y * d_y);
@@ -153,6 +157,17 @@ pub fn update(inputs: struct {
                 const v_y = n_y * config.player_direction_smoothness * delta_time;
                 state.player.movement_direction.x = if (@abs(d_x) < @abs(v_x)) input_direction.x else state.player.movement_direction.x + v_x;
                 state.player.movement_direction.y = if (@abs(d_y) < @abs(v_y)) input_direction.y else state.player.movement_direction.y + v_y;
+            } else {
+                // Normalize movement direction for boosting.
+                const d_x = state.player.movement_direction.x;
+                const d_y = state.player.movement_direction.y;
+                const distance = @sqrt(d_x * d_x + d_y * d_y);
+                state.player.movement_direction = if (@abs(distance) > 0) .{ .x = d_x / distance, .y = d_y / distance } else switch (state.player.view_direction) {
+                    .Left => .{ .x = -1, .y = 0 },
+                    .Right => .{ .x = 1, .y = 0 },
+                    .Up => .{ .x = 0, .y = -1 },
+                    .Down => .{ .x = 0, .y = 1 },
+                };
             }
 
             // Move player.
@@ -175,6 +190,7 @@ pub fn update(inputs: struct {
                     state.player.view_direction);
 
             if (interaction_instant) {
+                // Check proximity to machines.
                 for (config.machine_locations) |machine| {
                     const dx = state.player.position.x - machine.x;
                     const dy = state.player.position.y - machine.y;
@@ -188,11 +204,6 @@ pub fn update(inputs: struct {
                         state.player.view_direction = if (machine.x < state.player.position.x) ViewDirection.Left else ViewDirection.Right;
                     }
                 }
-            }
-        },
-        .Fixing => {
-            if (interaction_instant) {
-                state.player.action = .Idle;
             }
         },
     }

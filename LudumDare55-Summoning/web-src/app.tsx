@@ -226,13 +226,13 @@ export function App() {
                 | { type: "animation", animation: typeof ghost.idleSide, position: { x: number, y: number }, scale: { x: number, y: number } }
             > = [
                 { type: "sprite", sprite: background, origin: { x: 0, y: 0 }, position: { x: 0, y: 0 } },
+                { type: "animation", animation: chamber, position: allResources.config.chamber_location, scale: { x: 1, y: 1 } },
                 {
                     type: "animation",
                     animation: player.action === "Fixing" ? ghost.fixing : player.view_direction === "Up" ? ghost.idleBack : player.view_direction === "Down" ? ghost.idleFront : ghost.idleSide,
                     position: player.position,
                     scale: { x: player.view_direction === "Left" ? -1 : 1, y: 1 },
                 },
-                { type: "animation", animation: chamber, position: allResources.config.chamber_location, scale: { x: 1, y: 1 } },
                 ...allResources.config.machine_locations.map((location) => ({ type: "sprite" as const, sprite: machine, origin: { x: graphics.machine.width / 2, y: graphics.machine.height / 2 }, position: location })),
             ];
 
