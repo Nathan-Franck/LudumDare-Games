@@ -54,19 +54,20 @@ const State = struct {
     },
 };
 
+const Point = struct { x: f32, y: f32 };
+
 const Config = struct {
     screen: struct { width: u32, height: u32 },
     controller_dead_zone: f32,
     player_speed: f32,
     player_dash_speed: f32,
     player_dash_duration_ms: u64,
+    player_dash_cooldown_ms: u64,
     fix_proximity: f32,
-    fix_snap_offset: struct { x: f32, y: f32 },
-    chamber_location: struct { x: f32, y: f32 },
-    machine_locations: [4]struct { x: f32, y: f32 },
+    fix_snap_offset: Point,
+    chamber_location: Point,
+    machine_locations: [4]Point,
 };
-
-const Point = struct { x: f32, y: f32 };
 
 const config: Config = .{
     .screen = .{ .width = 1920, .height = 1080 },
@@ -74,6 +75,7 @@ const config: Config = .{
     .player_speed = 400,
     .player_dash_speed = 800,
     .player_dash_duration_ms = 200,
+    .player_dash_cooldown_ms = 500,
     .fix_proximity = 200,
     .fix_snap_offset = .{ .x = 180.0, .y = 0.0 },
     .chamber_location = .{ .x = 950.0, .y = 300.0 },
@@ -122,7 +124,6 @@ pub fn update(inputs: struct {
         .x = if (inputs.keyboard.left) -1.0 else if (inputs.keyboard.right) 1.0 else if (@abs(inputs.joystick.x) < config.controller_dead_zone) 0 else inputs.joystick.x,
         .y = if (inputs.keyboard.down) 1.0 else if (inputs.keyboard.up) -1.0 else if (@abs(inputs.joystick.y) < config.controller_dead_zone) 0 else inputs.joystick.y,
     };
-    _ = inputs.keyboard; // HACK - Somehow if I don't have this then sometimes the keyboard inputs aren't registered.
     const interaction = inputs.keyboard.interact or inputs.joystick.interact;
     const interaction_instant = interaction and !state.was_interacting;
 
