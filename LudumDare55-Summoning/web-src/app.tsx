@@ -17,6 +17,7 @@ const userMessage = {
 
 const { classes, encodedStyle } = declareStyle({
     container: {
+        backgroundColor: "#010101",
         margin: 0,
         padding: 0,
         width: '100%',

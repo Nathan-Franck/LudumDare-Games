@@ -63,12 +63,12 @@ pub const PngImage = struct {
             var new_data = try allocator.alloc(u8, dimensions.width * dimensions.height * 4);
             for (0..dimensions.height) |y| {
                 for (0..dimensions.width) |x| {
-                    var pixel_accum = [4]u8{ 0, 0, 0, 0 };
+                    var pixel_accum = [4]u32{ 0, 0, 0, 0 };
                     for (0..downSampleRate) |sy| {
                         for (0..downSampleRate) |sx| {
                             if (x * downSampleRate + sx < png.width and y * downSampleRate + sy < png.height) {
                                 const sample_index = 4 * (png.width * (y * downSampleRate + sy) + x * downSampleRate + sx);
-                                const pixel = data[sample_index .. sample_index * 4];
+                                const pixel = data[sample_index .. sample_index + 4];
                                 pixel_accum[0] += pixel[0];
                                 pixel_accum[1] += pixel[1];
                                 pixel_accum[2] += pixel[2];
@@ -77,10 +77,10 @@ pub const PngImage = struct {
                         }
                     }
                     const pixel_index = 4 * (dimensions.width * y + x);
-                    new_data[pixel_index + 0] = pixel_accum[0] / downSampleRate / downSampleRate;
-                    new_data[pixel_index + 1] = pixel_accum[1] / downSampleRate / downSampleRate;
-                    new_data[pixel_index + 2] = pixel_accum[2] / downSampleRate / downSampleRate;
-                    new_data[pixel_index + 3] = pixel_accum[3] / downSampleRate / downSampleRate;
+                    new_data[pixel_index + 0] = @intCast(pixel_accum[0] / downSampleRate / downSampleRate);
+                    new_data[pixel_index + 1] = @intCast(pixel_accum[1] / downSampleRate / downSampleRate);
+                    new_data[pixel_index + 2] = @intCast(pixel_accum[2] / downSampleRate / downSampleRate);
+                    new_data[pixel_index + 3] = @intCast(pixel_accum[3] / downSampleRate / downSampleRate);
                 }
             }
             return .{
@@ -96,3 +96,9 @@ pub const PngImage = struct {
         };
     }
 };
+
+test "png import" {
+    const allocator = std.heap.page_allocator;
+    const png_image = PngImage.load(allocator, "SummoningChamber_FullHD_ChamberProgressIncrease");
+    _ = try png_image;
+}

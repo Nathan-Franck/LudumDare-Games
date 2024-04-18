@@ -187,7 +187,6 @@ fn repairMachineTick(time_ms: u64) void {
     state.player.last_repair_time_ms = time_ms;
 
     const target_machine_index = state.player.target_machine_index;
-    const target_machine_index = state.player.target_machine_index;
     const breakdown_delay = config.levels[target_machine_index].breakdown_delay_ms;
     const the_machine = &state.machine_states[target_machine_index];
 
