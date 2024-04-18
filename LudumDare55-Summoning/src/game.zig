@@ -187,6 +187,7 @@ fn repairMachineTick(time_ms: u64) void {
     state.player.last_repair_time_ms = time_ms;
 
     const target_machine_index = state.player.target_machine_index;
+    const target_machine_index = state.player.target_machine_index;
     const breakdown_delay = config.levels[target_machine_index].breakdown_delay_ms;
     const the_machine = &state.machine_states[target_machine_index];
 
@@ -217,10 +218,12 @@ pub fn update(inputs: struct {
         return state;
     }
 
+    // If the player wins, go to next level.
     if (state.victory_time_ms) |victory_time_ms| {
         if (inputs.time_ms - victory_time_ms > config.victory_span_ms) {
             const next_level = state.current_level;
             if (next_level >= config.levels.len - 1) {
+                // We won the game!
                 state.win_time_ms = inputs.time_ms;
                 return state;
             }
@@ -233,6 +236,7 @@ pub fn update(inputs: struct {
         }
     }
 
+    // If the chamber is failing, restart the level.
     if (state.fail_time_ms) |fail_time_ms| {
         if (inputs.time_ms - fail_time_ms > config.fail_span_ms) {
             const next_level = state.current_level;
