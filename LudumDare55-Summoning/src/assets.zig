@@ -35,6 +35,7 @@ pub const PngImage = struct {
     data: []const u8,
     width: usize,
     height: usize,
+    scale: u8, // If we downsample, we have to declare that we have to scale up upon displaying.
 
     pub fn load(
         allocator: std.mem.Allocator,
@@ -87,12 +88,14 @@ pub const PngImage = struct {
                 .data = new_data,
                 .width = dimensions.width,
                 .height = dimensions.height,
+                .scale = downSampleRate,
             };
         }
         return .{
             .data = data,
             .width = png.width,
             .height = png.height,
+            .scale = 1,
         };
     }
 };
