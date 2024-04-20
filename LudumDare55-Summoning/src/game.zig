@@ -85,16 +85,16 @@ const config: Config = .{
         .{ .title = "Level 1 - Bring Me Back", .duration_ms = 1000 * 5, .breakdown_delay_ms = 1000 * 30, .required_online = 1 },
         .{ .title = "Level 2 - Poor Reliability", .duration_ms = 1000 * 20, .breakdown_delay_ms = 1000 * 15, .required_online = 1 },
         .{ .title = "Level 3 - We Need More Power", .duration_ms = 1000 * 30, .breakdown_delay_ms = 1000 * 15, .required_online = 2 },
-        .{ .title = "Level 4 - The Final Spawn", .duration_ms = 1000 * 40, .breakdown_delay_ms = 1000 * 12, .required_online = 2 },
+        .{ .title = "Level 4 - The Final Spawn", .duration_ms = 1000 * 40, .breakdown_delay_ms = 1000 * 13, .required_online = 2 },
     },
     .fix_proximity = 200,
     .fix_snap_offset = .{ .x = 180.0, .y = 50.0 },
     .chamber_location = .{ .x = 950.0, .y = 300.0 },
     .machine_locations = .{
-        .{ .x = 250, .y = 200 },
-        .{ .x = 250, .y = 850 },
-        .{ .x = 1650, .y = 200 },
-        .{ .x = 1650, .y = 850 },
+        .{ .x = 300, .y = 200 },
+        .{ .x = 300, .y = 850 },
+        .{ .x = 1600, .y = 200 },
+        .{ .x = 1600, .y = 850 },
     },
 };
 
@@ -214,11 +214,13 @@ pub fn update(inputs: struct {
 }) !State {
     if (state.win_time_ms) |win_time_ms| {
         _ = win_time_ms; // autofix
+        state.player.action = .Idle;
         return state;
     }
 
     // If the player wins, go to next level.
     if (state.victory_time_ms) |victory_time_ms| {
+        state.player.action = .Idle;
         if (inputs.time_ms - victory_time_ms > config.victory_span_ms) {
             const next_level = state.current_level;
             if (next_level >= config.levels.len - 1) {
@@ -237,6 +239,7 @@ pub fn update(inputs: struct {
 
     // If the chamber is failing, restart the level.
     if (state.fail_time_ms) |fail_time_ms| {
+        state.player.action = .Idle;
         if (inputs.time_ms - fail_time_ms > config.fail_span_ms) {
             const next_level = state.current_level;
             state = first_level_state;
