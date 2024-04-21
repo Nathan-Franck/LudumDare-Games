@@ -31,8 +31,6 @@ pub const SpriteSheetAnimation = struct {
     }
 };
 
-const ImageSizeLimit = 2048;
-
 pub const PngImage = struct {
     data: []const u8,
     width: usize,
