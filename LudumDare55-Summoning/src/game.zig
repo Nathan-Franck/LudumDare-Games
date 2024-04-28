@@ -83,9 +83,9 @@ const config: Config = .{
     .player_repair_delay_ms = 250,
     .levels = .{
         .{ .title = "Level 1 - Bring Me Back", .duration_ms = 1000 * 5, .breakdown_delay_ms = 1000 * 30, .required_online = 1 },
-        .{ .title = "Level 2 - Poor Reliability", .duration_ms = 1000 * 20, .breakdown_delay_ms = 1000 * 15, .required_online = 1 },
-        .{ .title = "Level 3 - We Need More Power", .duration_ms = 1000 * 30, .breakdown_delay_ms = 1000 * 15, .required_online = 2 },
-        .{ .title = "Level 4 - The Final Spawn", .duration_ms = 1000 * 40, .breakdown_delay_ms = 1000 * 13, .required_online = 2 },
+        .{ .title = "Level 2 - Poor Reliability", .duration_ms = 1000 * 20, .breakdown_delay_ms = 1000 * 20, .required_online = 1 },
+        .{ .title = "Level 3 - We Need More Power", .duration_ms = 1000 * 30, .breakdown_delay_ms = 1000 * 18, .required_online = 2 },
+        .{ .title = "Level 4 - The Final Spawn", .duration_ms = 1000 * 40, .breakdown_delay_ms = 1000 * 16, .required_online = 2 },
     },
     .fix_proximity = 200,
     .fix_snap_offset = .{ .x = 180.0, .y = 50.0 },
